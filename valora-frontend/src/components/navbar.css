@@ -1,0 +1,203 @@
+/* Navbar Container */
+.navbar {
+    background-color: var(--bg-primary);
+    box-shadow: 0 2px 8px var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+}
+
+.navbar-container {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: var(--spacing-md) var(--spacing-xl);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Logo */
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.logo {
+    height: 50px;
+    width: auto;
+    max-width: 180px;
+    object-fit: contain;
+    transition: transform var(--transition-normal);
+}
+
+.logo:hover {
+    transform: scale(1.05);
+}
+
+/* Menu Toggle Button (Mobile) */
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    gap: 5px;
+}
+
+.menu-toggle span {
+    width: 25px;
+    height: 3px;
+    background-color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-normal);
+}
+
+.menu-toggle.active span:nth-child(1) {
+    transform: rotate(45deg) translate(7px, 7px);
+}
+
+.menu-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.menu-toggle.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* Navigation Menu */
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.nav-link {
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: var(--font-md);
+    font-weight: var(--font-medium);
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-normal);
+    white-space: nowrap;
+}
+
+.nav-link:hover {
+    background-color: var(--bg-light);
+    color: var(--primary-color);
+}
+
+/* Primary Button (Login) */
+.nav-link-primary {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.nav-link-primary:hover {
+    background-color: var(--primary-color);
+    color: var(--color-white);
+}
+
+/* Secondary Button (Sign up) */
+.nav-link-secondary {
+    background-color: var(--primary-color);
+    color: var(--color-white);
+    border: 1px solid var(--primary-color);
+}
+
+.nav-link-secondary:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+/* Tablet Responsiveness */
+@media screen and (max-width: 968px) {
+    .navbar-container {
+        padding: var(--spacing-md) var(--spacing-lg);
+    }
+
+    .nav-menu {
+        gap: var(--spacing-sm);
+    }
+
+    .nav-link {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: var(--font-sm);
+    }
+
+    .logo {
+        height: 45px;
+        max-width: 150px;
+    }
+}
+
+/* Mobile Responsiveness */
+@media screen and (max-width: 768px) {
+    .navbar-container {
+        padding: var(--spacing-md);
+    }
+
+    .menu-toggle {
+        display: flex;
+    }
+
+    .nav-menu {
+        position: fixed;
+        left: -100%;
+        top: 82px;
+        flex-direction: column;
+        background-color: var(--bg-primary);
+        width: 100%;
+        text-align: center;
+        transition: left var(--transition-normal);
+        box-shadow: 0 4px 8px var(--shadow-md);
+        padding: var(--spacing-md) 0;
+        gap: 0;
+    }
+
+    .nav-menu.active {
+        left: 0;
+    }
+
+    .nav-link {
+        width: 100%;
+        padding: var(--spacing-md);
+        border-radius: 0;
+        display: block;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .nav-link:hover {
+        background-color: var(--bg-secondary);
+    }
+
+    .logo {
+        height: 40px;
+        max-width: 130px;
+    }
+}
+
+/* Small Mobile */
+@media screen and (max-width: 480px) {
+    .navbar-container {
+        padding: 0.75rem;
+    }
+
+    .logo {
+        height: 35px;
+        max-width: 110px;
+    }
+
+    .menu-toggle span {
+        width: 22px;
+    }
+
+    .nav-link {
+        font-size: var(--font-sm);
+        padding: 0.9rem;
+    }
+}
