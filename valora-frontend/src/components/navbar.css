@@ -1,0 +1,27 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    padding-right: 2rem;
+    border: 1px solid rgb(27, 175, 255);
+}
+
+.logo{
+    width: 15vw;
+    height: 8vh;
+}
+
+.nav-comps{
+    display: flex;
+    gap: 7px;
+    justify-content: space-between;
+    width: 30vw;
+}
+
+.nav-comps h3{
+    border: 1px solid rgb(27, 175, 255);
+    padding: 0.5rem;
+    width: 10vh;
+    border-radius: 10px;
+    background-color: rgb(27, 175, 255);
+}
