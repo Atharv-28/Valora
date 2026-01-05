@@ -15,8 +15,9 @@
   /* Background Colors */
   --bg-primary: #ffffff;
   --bg-secondary: #f8f9fa;
+  --bg-grey: #efefef;
   --bg-light: #f5f5f5;
-  --bg-hover: #f0f0f0;
+  --bg-hover: #c7c7c7;
 
   /* Border Colors */
   --border-light: #f0f0f0;
