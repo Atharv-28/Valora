@@ -1,5 +1,6 @@
 import React from 'react'
 import { PoweredBy } from '../components/poweredBy'
+import { WhyValora } from '../components/whyValora'
 
 export const Home = () => {
     return (
@@ -8,8 +9,10 @@ export const Home = () => {
                 <h1>Welcome to Valora</h1>
                 <p>AI-Powered Interview Practice Platform</p>
 
-                <PoweredBy/>
-                
+                <PoweredBy />
+
+                <WhyValora />
+
             </div>
         </div>
     )
