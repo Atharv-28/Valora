@@ -1,4 +1,3 @@
-import React from 'react'
 import { PoweredBy } from '../components/poweredBy'
 import React from 'react';
 import Herosection from '../components/herosection.js' ;
