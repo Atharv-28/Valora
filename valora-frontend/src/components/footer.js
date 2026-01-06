@@ -20,7 +20,8 @@ export const Footer = () => {
                     </div>
                 </div>
                 <div className="up-footer-3">
-                    <h4>About Us</h4>
+                    <h4>About Us</h4> 
+                    {/* update these to link later */}
                     <h4>Contact Us</h4>
                 </div>
 
