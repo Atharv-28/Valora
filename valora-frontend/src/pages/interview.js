@@ -208,7 +208,10 @@ export const Interview = () => {
     };
 
     const handleUserSpeech = async (userMessage) => {
-        if (!userMessage.trim() || isProcessing) return;
+        if (!userMessage.trim() || isProcessing) {
+            console.log('⏭️ Skipping - empty message or already processing');
+            return;
+        }
 
         const currentSessionId = sessionIdRef.current; // Use ref instead of state
 
@@ -224,6 +227,10 @@ export const Interview = () => {
             return;
         }
 
+        // IMPORTANT: Stop listening immediately to prevent picking up AI's voice
+        speechToText.stop();
+        console.log('🛑 Speech recognition stopped to prevent echo');
+        
         setIsProcessing(true);
         
         // Add user message to transcript
@@ -231,12 +238,15 @@ export const Interview = () => {
 
         try {
             console.log('📤 Sending to backend...');
-            // Send message to backend
+            console.log('⏳ Waiting for complete response from Gemini (no timeout)...');
+            
+            // Send message to backend - wait for complete response
             const response = await interviewApi.sendMessage(currentSessionId, userMessage, {
                 jobPosition: interviewData.jobPosition,
                 interviewType: interviewData.interviewType
             });
             console.log('✅ Response received:', response);
+            console.log(`📊 Response length: ${response.message?.length} characters`);
 
             const botResponse = response.message;
             setBotMessage(botResponse);
@@ -244,17 +254,29 @@ export const Interview = () => {
             // Add bot response to transcript
             setTranscript(prev => [...prev, { speaker: 'bot', text: botResponse }]);
 
+            console.log('🔊 AI is speaking...');
             // Speak the response
             await textToSpeech.speak(botResponse);
+            console.log('✅ AI finished speaking');
+            
+            // Wait an additional 1 second after speech ends before restarting recognition
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Restart listening after AI finishes speaking
+            console.log('🎤 Restarting speech recognition...');
+            startListening();
         } catch (error) {
             console.error('Error processing speech:', error);
             const errorMsg = "I apologize, I didn't catch that. Could you please repeat?";
             setBotMessage(errorMsg);
             await textToSpeech.speak(errorMsg);
+            
+            // Restart listening even on error
+            startListening();
         } finally {
             setIsProcessing(false);
         }
-    };
+    }
 
     return (
         <div className="interview-container">

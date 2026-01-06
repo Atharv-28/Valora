@@ -98,11 +98,17 @@ class InterviewController {
                 });
             }
 
+            // Set a longer timeout for this request (2 minutes)
+            req.setTimeout(120000);
+
             console.log('🤖 Forwarding message to Gemini...');
-            // Send message to Gemini and get response
+            console.log('⏳ Waiting for complete response (no timeout)...');
+            
+            // Send message to Gemini and get response - let it take all the time it needs
             const response = await geminiService.sendMessage(sessionId, message);
 
             console.log('✅ Response received from Gemini');
+            console.log(`📊 Response length: ${response.length} characters`);
             console.log('📤 Sending response to frontend...');
 
             res.status(200).json({

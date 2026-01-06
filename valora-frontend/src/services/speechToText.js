@@ -106,6 +106,7 @@ class SpeechToTextService {
 
         try {
             this.recognition.start();
+            console.log('🎤 Speech recognition started - please speak only during pauses in AI speech');
         } catch (error) {
             console.log('Recognition already started or error:', error);
         }

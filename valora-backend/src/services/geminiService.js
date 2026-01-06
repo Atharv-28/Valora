@@ -28,10 +28,15 @@ Your role:
 - For HR interviews: Focus on behavioral questions, team fit, communication skills, and career goals
 - Be conversational and professional
 - Ask follow-up questions based on candidate responses
-- Keep responses concise (2-3 sentences max)
-- Don't repeat questions that have already been answered
 
-Important: Respond naturally as if you're in a live conversation. Keep your responses brief and conversational.`;
+CRITICAL RULES:
+1. EVERY response MUST end with a clear, direct question
+2. Keep responses concise (2-3 sentences maximum, including the question)
+3. Never repeat questions already asked
+4. Format: [Brief acknowledgment/comment] + [Clear Question]
+5. Example: "That's great experience with React. How would you handle state management in a large-scale application?"
+
+Remember: ALWAYS end your response with a question mark (?). Your response is incomplete without a question.`;
 
         return basePrompt;
     }
@@ -59,11 +64,11 @@ Important: Respond naturally as if you're in a live conversation. Keep your resp
                     },
                     {
                         role: 'model',
-                        parts: [{ text: 'Understood. I am ready to conduct the interview.' }]
+                        parts: [{ text: 'Understood. I am ready to conduct the interview. Every response will end with a clear question.' }]
                     }
                 ],
                 generationConfig: {
-                    maxOutputTokens: 200,
+                    maxOutputTokens: 500,
                     temperature: 0.7,
                 }
             });
