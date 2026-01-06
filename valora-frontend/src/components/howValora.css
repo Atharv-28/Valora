@@ -1,0 +1,43 @@
+.hv-container {
+    display: flex;
+    flex-direction: column;
+    font-size: large;
+}
+
+.hv-text {
+    
+    padding: 20px;
+    margin-top: 30px;
+}
+
+.hv-content {
+    
+    text-align: left;
+    padding: 50px;
+    margin-left: 10vw;
+}
+
+.hv-details {
+    display: flex;
+    padding: 20px;
+
+}
+
+.hv-logo {
+    background-color: var(--primary-light);
+    display: flex;
+    border-radius: 20px;
+    align-items: center;
+    width: 3.5vw;
+    height: 7vh;
+    padding: 10px;
+}
+
+.hv-inside-details{
+    display: flex;
+    flex-direction: column;
+    padding-top: 4px;
+    margin-left: 40px;
+    width: 60vw; 
+    text-align: justify
+}
