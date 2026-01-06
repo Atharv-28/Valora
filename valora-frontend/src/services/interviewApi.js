@@ -1,0 +1,71 @@
+// API Service for Interview Backend
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+class InterviewApiService {
+    async initializeInterview(formData) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/interview/init`, {
+                method: 'POST',
+                body: formData // FormData with resume and other details
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error initializing interview:', error);
+            throw error;
+        }
+    }
+
+    async sendMessage(sessionId, message, context) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/interview/message`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sessionId,
+                    message,
+                    context
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error sending message:', error);
+            throw error;
+        }
+    }
+
+    async endInterview(sessionId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/interview/end`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sessionId })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error ending interview:', error);
+            throw error;
+        }
+    }
+}
+
+export default new InterviewApiService();

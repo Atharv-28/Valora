@@ -17,7 +17,7 @@ export const WhyValora = () => {
             <div className='wv-content'>
                 <div className='wv-details'>
                     <div className='wv-logo'>
-                        <MicIcon color='action'/>
+                        <MicIcon color='primary'/>
                     </div>
 
                     <h3>Voice Analysis</h3>
@@ -30,7 +30,7 @@ export const WhyValora = () => {
 
                 <div className='wv-details'>
                     <div className='wv-logo'>
-                        <CodeIcon />
+                        <CodeIcon color='primary'/>
                     </div>
 
                     <h3>Code Logic</h3>
@@ -43,7 +43,7 @@ export const WhyValora = () => {
 
                 <div className='wv-details'>
                     <div className='wv-logo'>
-                        <VideocamIcon />
+                        <VideocamIcon color='primary'/>
                     </div>
 
                     <h3>Body Language</h3>

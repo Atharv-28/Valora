@@ -2,7 +2,7 @@
   /* Primary Colors */
   --primary-color: #1BA0FF;
   --primary-hover: #1580cc;
-  --primary-light: #f0f9ff;
+  --primary-light: #e3f3ff;
   --primary-dark: #0d5a8f;
 
   /* Neutral Colors */
@@ -80,6 +80,7 @@
 
 body {
   margin: 0;
+  overflow-x: hidden;
   font-family: "Overlock", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

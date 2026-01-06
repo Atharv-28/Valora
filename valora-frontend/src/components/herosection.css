@@ -3,6 +3,7 @@
     /* height: 100vh; */
     display: flex;
     justify-content: space-evenly;
+    background-color: var(--primary-light);
 }
 .hero-left{
     display: flex;
