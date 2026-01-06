@@ -43,3 +43,92 @@
     padding: 5px;
     text-align: center;
 }
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .wv-content {
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .wv-details {
+        width: 45%;
+        height: auto;
+        min-height: 250px;
+    }
+
+    .wv-logo {
+        width: 50px;
+        height: 50px;
+    }
+}
+
+@media (max-width: 768px) {
+    .wv-container {
+        padding: var(--spacing-sm);
+        padding-top: 30px;
+        padding-bottom: 30px;
+    }
+
+    .wv-content {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: var(--spacing-sm);
+        margin-left: 0;
+    }
+
+    .wv-details {
+        width: 80%;
+        height: auto;
+        min-height: 200px;
+    }
+
+    .wv-logo {
+        width: 45px;
+        height: 45px;
+    }
+
+    .wv-text h2 {
+        font-size: 1.5rem;
+    }
+
+    .wv-text p {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .wv-container {
+        padding: 15px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+
+    .wv-details {
+        width: 90%;
+        padding: 15px;
+    }
+
+    .wv-logo {
+        width: 40px;
+        height: 40px;
+    }
+
+    .wv-text h2 {
+        font-size: 1.3rem;
+    }
+
+    .wv-text p {
+        font-size: 0.85rem;
+        padding: 0 10px;
+    }
+
+    .wv-details h3 {
+        font-size: 1.1rem;
+    }
+
+    .wv-details p {
+        font-size: 0.85rem;
+    }
+}

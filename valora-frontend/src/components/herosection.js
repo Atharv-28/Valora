@@ -13,8 +13,7 @@ const Herosection = () => {
 
                 </div>
                 <p className="hero-subtitle">Valora is a multimodal AI platform that revolutionizes interview prep by transforming your PDF Resume and Job Description into a live, vocal technical interview.</p>
-                <Link to="" className="hero-link">Start mock interview</Link>
-                {/* remember to use route */}
+                <Link to="/start-interview" className="hero-link">Start mock interview</Link>
 
             </div>
             <div className="hero-right">
