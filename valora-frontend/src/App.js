@@ -4,6 +4,7 @@ import { Home } from './pages/home';
 import { Navbar } from './components/navbar';
 import { StartInterview } from './pages/startInterview';
 import { Interview } from './pages/interview';
+import { Footer } from './components/footer';
 
 function AppContent() {
   const location = useLocation();
@@ -21,6 +22,7 @@ function AppContent() {
         <Route path="/login" element={<div style={{padding: '2rem'}}>Login Page - Coming Soon</div>} />
         <Route path="/signup" element={<div style={{padding: '2rem'}}>Sign Up Page - Coming Soon</div>} />
       </Routes>
+      <Footer />
     </div>
   );
 }
