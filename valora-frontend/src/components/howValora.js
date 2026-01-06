@@ -19,7 +19,7 @@ export const HowValora = () => {
             <div className='hv-content'>
                 <div className='hv-details'>
                     <div className='hv-logo'>
-                        <UploadFileIcon fontSize='large' color='primary'/>
+                        <UploadFileIcon fontSize='medium' color='primary' className='logo-size'/>
                     </div>
 
                     <div className='hv-inside-details'>
@@ -35,7 +35,7 @@ export const HowValora = () => {
 
                 <div className='hv-details'>
                     <div className='hv-logo'>
-                        <VideoChatIcon fontSize='large' color='primary'/>
+                        <VideoChatIcon fontSize='medium' color='primary' className='logo-size'/>
                     </div>
 
                     <div className='hv-inside-details'>
@@ -50,7 +50,7 @@ export const HowValora = () => {
 
                 <div className='hv-details'>
                     <div className='hv-logo'>
-                        <AnalyticsIcon fontSize='large' color='primary'/>
+                        <AnalyticsIcon fontSize='medium' color='primary' className='logo-size'/>
                     </div>
 
                     <div className='hv-inside-details'>
