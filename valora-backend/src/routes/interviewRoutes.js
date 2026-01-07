@@ -4,16 +4,9 @@ const multer = require('multer');
 const path = require('path');
 const interviewController = require('../controllers/interviewController');
 
-// Configure multer for file upload
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'resume-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer for memory storage (better for cloud deployment like Render)
+// Files are stored in memory as Buffer objects, not saved to disk
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
