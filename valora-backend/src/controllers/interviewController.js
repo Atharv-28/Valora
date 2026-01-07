@@ -1,6 +1,5 @@
 const geminiService = require('../services/geminiService');
 const resumeService = require('../services/resumeService');
-const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
 
 class InterviewController {
@@ -41,7 +40,8 @@ class InterviewController {
 
             // Extract text from resume
             console.log('📄 Extracting text from resume...');
-            const pdfBuffer = await fs.readFile(req.file.path);
+            // With memoryStorage, file buffer is available directly in req.file.buffer
+            const pdfBuffer = req.file.buffer;
             const resumeText = await resumeService.extractTextFromPDF(pdfBuffer);
             console.log(`✅ Resume text extracted: ${resumeText.length} characters`);
 

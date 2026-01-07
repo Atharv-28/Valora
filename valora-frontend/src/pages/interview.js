@@ -24,6 +24,7 @@ export const Interview = () => {
     const [sessionId, setSessionId] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [userTranscript, setUserTranscript] = useState('');
+    const [showDisclaimer, setShowDisclaimer] = useState(false);
     
     const interviewData = location.state;
 
@@ -52,6 +53,13 @@ export const Interview = () => {
             exitFullscreen();
         };
     }, []);
+
+    useEffect(() => {
+        // Show disclaimer when component mounts
+        if (interviewData) {
+            setShowDisclaimer(true);
+        }
+    }, [interviewData]);
 
     const initializeMedia = async () => {
         try {
@@ -145,6 +153,7 @@ export const Interview = () => {
     };
 
     const handleStartInterview = async () => {
+        setShowDisclaimer(false);
         setIsInterviewStarted(true);
         setIsProcessing(true);
 
@@ -389,6 +398,37 @@ export const Interview = () => {
                     </button>
                 )}
             </div>
+
+            {/* Disclaimer Modal */}
+            {showDisclaimer && (
+                <div className="disclaimer-overlay">
+                    <div className="disclaimer-modal">
+                        <h2>⚠️ Important Notice</h2>
+                        <div className="disclaimer-content">
+                            <div className="disclaimer-item">
+                                <span className="disclaimer-icon">⏰</span>
+                                <p><strong>Continuous Interview:</strong> The interview will continue indefinitely until you manually end it using the "End Call" button. There is no automatic timeout mechanism.</p>
+                            </div>
+                            <div className="disclaimer-item">
+                                <span className="disclaimer-icon">📊</span>
+                                <p><strong>No Post-Interview Report:</strong> Interview analysis and performance reports are not available yet. This feature is currently under development.</p>
+                            </div>
+                            <div className="disclaimer-item">
+                                <span className="disclaimer-icon">🎤</span>
+                                <p><strong>Microphone Required:</strong> Please ensure your microphone is enabled and working for the voice-based interview.</p>
+                            </div>
+                        </div>
+                        <div className="disclaimer-actions">
+                            <button className="disclaimer-cancel" onClick={() => navigate(-1)}>
+                                Go Back
+                            </button>
+                            <button className="disclaimer-accept" onClick={() => setShowDisclaimer(false)}>
+                                I Understand, Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
