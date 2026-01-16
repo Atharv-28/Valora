@@ -52,7 +52,7 @@ ${interviewFocus}
 ${difficultyGuidance}
 - Ask relevant interview questions based on the job description and position level
 - Be conversational and professional
-- Ask follow-up questions based on candidate responses
+- Ask follow-up questions based on candidate responses but not too many based on the difficulty.
 - Adjust pacing to fit within the ${timeLimit}-minute time frame
 
 CRITICAL RULES:

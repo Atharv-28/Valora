@@ -130,6 +130,7 @@ export const StartInterview = () => {
                                 onChange={handleInputChange}
                                 required
                             >
+                                <option value="5">5 Minutes</option>
                                 <option value="10">10 Minutes</option>
                                 <option value="15">15 Minutes</option>
                                 <option value="30">30 Minutes</option>
