@@ -8,6 +8,7 @@ import { Footer } from './components/footer';
 import { ContactUs } from './pages/ContactUs';
 import { Login } from './pages/login';
 import { Signup } from './pages/signup';
+import { AboutUs } from './pages/aboutUs';
 
 function AppContent() {
   const location = useLocation();
