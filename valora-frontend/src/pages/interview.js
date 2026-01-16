@@ -433,23 +433,26 @@ export const Interview = () => {
             </div>
 
             {/* Transcript Section */}
-            {transcript.length > 0 && (
-                <div className="transcript-section">
+            <div className="transcript-section">
                 {userTranscript && (
                     <div className="user-speaking-indicator">
                         <span className="speaking-text">You're saying: {userTranscript}</span>
                     </div>
                 )}
-                    <h4>Conversation</h4>
-                    <div className="transcript-list">
-                        {transcript.map((item, index) => (
+                <div className="transcript-list">
+                    {transcript.length === 0 ? (
+                        <div style={{ color: '#aaa', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>
+                            Conversation will appear here once the interview starts...
+                        </div>
+                    ) : (
+                        transcript.map((item, index) => (
                             <div key={index} className={`transcript-item ${item.speaker}`}>
                                 <strong>{item.speaker === 'bot' ? 'AI' : 'You'}:</strong> {item.text}
                             </div>
-                        ))}
-                    </div>
+                        ))
+                    )}
                 </div>
-            )}
+            </div>
 
             {/* Control Panel */}
             <div className="control-panel">
@@ -481,7 +484,7 @@ export const Interview = () => {
 
                 {!isInterviewStarted && (
                     <button className="start-speaking-btn" onClick={handleStartInterview}>
-                        🎙️ Start Speaking
+                        🎙️ Start Interview
                     </button>
                 )}
             </div>
