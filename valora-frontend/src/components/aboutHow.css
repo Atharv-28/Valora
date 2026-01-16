@@ -1,0 +1,105 @@
+.ab-how-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+}
+
+/* Each step */
+.steps {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+/* Alternate layout */
+.steps:nth-child(even) {
+  direction: rtl;
+}
+
+.steps:nth-child(even) .step-info,
+.steps:nth-child(even) .step-img {
+  direction: ltr;
+}
+
+/* Image placeholder card */
+.step-img {
+  height: 260px;
+  background: #f5f9ff;
+  border-radius: 16px;
+  border: 1px solid #e3edff;
+  box-shadow: 0 8px 24px rgba(0, 90, 200, 0.08);
+  position: relative;
+}
+
+/* Step content */
+.step-info {
+  background: #ffffff;
+  padding: 2rem 2.5rem;
+  border-radius: 16px;
+  border: 1px solid #e6efff;
+  box-shadow: 0 10px 30px rgba(0, 90, 200, 0.1);
+  position: relative;
+}
+
+/* Step number badge */
+.step-no {
+  position: absolute;
+  top: -18px;
+  left: -18px;
+  background: #1e88ff;
+  color: #ffffff;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-no h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Headings */
+.step-info h3 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #0f2a44;
+  margin-bottom: 0.75rem;
+}
+
+/* Description text */
+.step-info p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #4a5d73;
+}
+
+/* ------------------- */
+/* Responsive (Mobile) */
+/* ------------------- */
+
+@media (max-width: 900px) {
+  .steps {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .steps:nth-child(even) {
+    direction: ltr;
+  }
+
+  .step-no {
+    left: 16px;
+    top: -20px;
+  }
+
+  .step-img {
+    height: 220px;
+  }
+}
