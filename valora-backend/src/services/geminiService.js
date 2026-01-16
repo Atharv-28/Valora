@@ -165,10 +165,28 @@ Example: "Good React experience. How would you handle state in large apps?"`;
             let extractedReport = null;
             if (shouldEndInterview && response.includes('---REPORT---')) {
                 const reportStart = response.indexOf('---REPORT---');
-                const reportJson = response.substring(reportStart + 12).trim();
+                let reportJson = response.substring(reportStart + 12).trim();
+
+                // Strip markdown fences if Gemini wraps JSON
+                if (reportJson.startsWith('```json')) {
+                    reportJson = reportJson.replace(/^```json\s*/g, '');
+                } else if (reportJson.startsWith('```')) {
+                    reportJson = reportJson.replace(/^```\s*/g, '');
+                }
+                if (reportJson.endsWith('```')) {
+                    reportJson = reportJson.replace(/```\s*$/g, '');
+                }
+
+                // Extract JSON block only
+                const start = reportJson.indexOf('{');
+                const end = reportJson.lastIndexOf('}');
+                if (start >= 0 && end > start) {
+                    reportJson = reportJson.substring(start, end + 1);
+                }
+
                 try {
                     extractedReport = JSON.parse(reportJson);
-                    session.report = extractedReport; // Store report in session
+                    session.report = extractedReport;
                     console.log('   📊 Report extracted and stored in session');
                 } catch (error) {
                     console.error('   ⚠️ Failed to parse embedded report:', error.message);

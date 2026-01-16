@@ -78,58 +78,58 @@ Requirements:
     }
 
     parseReportResponse(response) {
+        const stripCodeFences = (text) => {
+            let cleaned = text.trim();
+            if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json\s*/g, '');
+            else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```\s*/g, '');
+            if (cleaned.endsWith('```')) cleaned = cleaned.replace(/```\s*$/g, '');
+            return cleaned.trim();
+        };
+
+        const extractJsonBlock = (text) => {
+            const start = text.indexOf('{');
+            const end = text.lastIndexOf('}');
+            return (start >= 0 && end > start) ? text.substring(start, end + 1) : text;
+        };
+
+        const attemptParse = (text) => {
+            try {
+                const parsed = JSON.parse(text);
+                return (parsed && parsed.scoringBreakdown && Array.isArray(parsed.questionAnalysis)) ? parsed : null;
+            } catch { return null; }
+        };
+
+        const salvageQuestionAnalysis = (text) => {
+            const qaIndex = text.indexOf('"questionAnalysis"');
+            if (qaIndex === -1) return null;
+            const arrayStart = text.indexOf('[', qaIndex);
+            if (arrayStart === -1) return null;
+            const arraySlice = text.substring(arrayStart + 1);
+            const lastComplete = arraySlice.lastIndexOf('},');
+            if (lastComplete === -1) return null;
+            const prefix = text.substring(0, arrayStart + 1);
+            let rebuilt = `${prefix}${arraySlice.substring(0, lastComplete + 1)}\n]`;
+            const openBraces = (rebuilt.match(/{/g) || []).length;
+            const closeBraces = (rebuilt.match(/}/g) || []).length;
+            if (openBraces > closeBraces) rebuilt += '\n' + '}'.repeat(openBraces - closeBraces);
+            return rebuilt;
+        };
+
         try {
-            // Remove markdown code blocks if present
-            let cleanedResponse = response.trim();
-            
-            // Remove markdown code blocks
-            if (cleanedResponse.startsWith('```json')) {
-                cleanedResponse = cleanedResponse.replace(/^```json\s*/g, '');
-            } else if (cleanedResponse.startsWith('```')) {
-                cleanedResponse = cleanedResponse.replace(/^```\s*/g, '');
-            }
-            
-            // Remove trailing markdown if present
-            if (cleanedResponse.endsWith('```')) {
-                cleanedResponse = cleanedResponse.replace(/```\s*$/g, '');
-            }
-            
-            // Try to fix incomplete JSON by finding the last complete object
-            cleanedResponse = cleanedResponse.trim();
-            
-            // If JSON is incomplete, try to find and close it properly
-            if (!cleanedResponse.endsWith('}')) {
-                // Find the last complete field
-                const lastCompletePos = cleanedResponse.lastIndexOf('},');
-                if (lastCompletePos > 0) {
-                    // Truncate after the last complete field and close the JSON
-                    cleanedResponse = cleanedResponse.substring(0, lastCompletePos + 1);
-                    
-                    // Count open braces vs close braces to properly close
-                    const openBraces = (cleanedResponse.match(/{/g) || []).length;
-                    const closeBraces = (cleanedResponse.match(/}/g) || []).length;
-                    const missingBraces = openBraces - closeBraces;
-                    
-                    for (let i = 0; i < missingBraces; i++) {
-                        cleanedResponse += '\n}';
-                    }
+            let cleaned = extractJsonBlock(stripCodeFences(response));
+            let reportData = attemptParse(cleaned);
+            if (!reportData) {
+                const salvaged = salvageQuestionAnalysis(cleaned);
+                if (salvaged) {
+                    console.log('   🧩 Salvaging incomplete JSON...');
+                    reportData = attemptParse(salvaged);
                 }
             }
-
-            console.log('   🧹 Cleaned response length:', cleanedResponse.length);
-            const reportData = JSON.parse(cleanedResponse);
-
-            // Validate the structure
-            if (!reportData.overallScore || !reportData.scoringBreakdown || !reportData.questionAnalysis) {
-                throw new Error('Invalid report structure');
-            }
-
+            if (!reportData) throw new Error('Invalid report structure');
             return reportData;
         } catch (error) {
-            console.error('❌ Error parsing report response:', error.message);
-            console.error('Raw response (first 500 chars):', response.substring(0, 500));
-            
-            // Return a fallback structure
+            console.error('❌ Error parsing report:', error.message);
+            console.error('First 500 chars:', response.substring(0, 500));
             return {
                 overallScore: 0,
                 scoringBreakdown: {
