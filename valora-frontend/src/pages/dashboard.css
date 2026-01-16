@@ -1,0 +1,390 @@
+.dashboard {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  padding: var(--spacing-xl);
+}
+
+/* Header */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-secondary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 6px var(--shadow-sm);
+  margin-bottom: var(--spacing-xl);
+  border: 1px solid var(--border-light);
+}
+
+.header-content h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-3xl);
+  font-weight: var(--font-bold);
+}
+
+.welcome-text {
+  margin: var(--spacing-sm) 0 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-md);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.btn-primary, .btn-secondary, .btn-view {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-md);
+  font-weight: var(--font-semibold);
+  transition: all var(--transition-normal);
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: var(--color-white);
+  border: 1px solid var(--primary-color);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-light);
+  border-color: var(--primary-color);
+}
+
+.btn-view {
+  background: var(--success-color);
+  color: var(--color-white);
+  padding: 0.5rem 1rem;
+  font-size: var(--font-sm);
+}
+
+.btn-view:hover {
+  background: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.stat-card {
+  background: var(--bg-secondary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 6px var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px var(--shadow-md);
+  border-color: var(--primary-light);
+}
+
+.stat-icon {
+  font-size: var(--font-3xl);
+}
+
+.stat-content h3 {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+}
+
+.stat-value {
+  margin: var(--spacing-sm) 0 0 0;
+  font-size: var(--font-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
+.stat-list {
+  margin: var(--spacing-sm) 0 0 0;
+  font-size: var(--font-sm);
+  color: var(--primary-color);
+  font-weight: var(--font-semibold);
+}
+
+/* Charts Section */
+.charts-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.chart-card {
+  background: var(--bg-secondary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 6px var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  margin-bottom: var(--spacing-lg);
+}
+
+.chart-card h2 {
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--text-primary);
+  font-size: var(--font-xl);
+  font-weight: var(--font-semibold);
+}
+
+.charts-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.half-width {
+  margin-bottom: 0;
+}
+
+/* Skills Section */
+.skills-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.skills-card {
+  background: var(--bg-secondary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 6px var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+
+.skills-card h2 {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--text-primary);
+  font-size: var(--font-xl);
+  font-weight: var(--font-semibold);
+}
+
+.skills-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.skills-card li {
+  padding: 0.75rem;
+  margin-bottom: var(--spacing-sm);
+  background: var(--bg-light);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+}
+
+.skills-card li:hover {
+  background: var(--primary-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Interviews Section */
+.interviews-section {
+  background: var(--bg-secondary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 6px var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+
+.interviews-section h2 {
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--text-primary);
+  font-size: var(--font-2xl);
+  font-weight: var(--font-semibold);
+}
+
+.interviews-table {
+  overflow-x: auto;
+}
+
+.interviews-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.interviews-table th,
+.interviews-table td {
+  padding: var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.interviews-table th {
+  background: var(--bg-light);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.interviews-table td {
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+}
+
+.interviews-table tr:hover td {
+  background: var(--bg-light);
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+.score-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-semibold);
+  font-size: var(--font-sm);
+}
+
+.score-badge.good {
+  background: var(--primary-light);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+.score-badge.medium {
+  background: #fef3c7;
+  color: var(--warning-color);
+  border: 1px solid var(--warning-color);
+}
+
+.score-badge.low {
+  background: #fee2e2;
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+}
+
+.empty-state p {
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-lg);
+}
+
+/* Loading and Error States */
+.dashboard-loading,
+.dashboard-error {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid var(--border-light);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--spacing-md);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.dashboard-error h2 {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+.dashboard-error button {
+  margin-top: var(--spacing-md);
+  padding: 0.75rem 1.5rem;
+  background: var(--primary-color);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: var(--font-semibold);
+  font-size: var(--font-md);
+  transition: all var(--transition-normal);
+}
+
+.dashboard-error button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard {
+    padding: var(--spacing-md);
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+
+  .skills-section {
+    grid-template-columns: 1fr;
+  }
+
+  .interviews-table {
+    font-size: var(--font-sm);
+  }
+
+  .interviews-table th,
+  .interviews-table td {
+    padding: var(--spacing-sm);
+  }
+
+  .interviews-section {
+    padding: var(--spacing-lg);
+  }
+}

@@ -114,6 +114,19 @@
     border-color: var(--primary-hover);
 }
 
+/* Logout Button */
+.nav-logout {
+    background: none;
+    border: 1px solid var(--error-color);
+    color: var(--error-color);
+    cursor: pointer;
+}
+
+.nav-logout:hover {
+    background-color: var(--error-color);
+    color: var(--color-white);
+}
+
 /* Tablet Responsiveness */
 @media screen and (max-width: 968px) {
     .navbar-container {

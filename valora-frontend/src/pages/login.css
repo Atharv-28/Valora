@@ -99,6 +99,44 @@
 	cursor: not-allowed;
 }
 
+.auth-divider {
+	display: flex;
+	align-items: center;
+	text-align: center;
+	margin: var(--spacing-md) 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+	content: '';
+	flex: 1;
+	border-bottom: 1px solid var(--border-medium);
+}
+
+.auth-divider span {
+	padding: 0 var(--spacing-sm);
+	color: var(--text-secondary);
+	font-size: var(--font-sm);
+}
+
+.guest-button {
+	width: 100%;
+	padding: 0.85rem 1rem;
+	border-radius: var(--radius-md);
+	border: 1px solid var(--border-medium);
+	background: var(--bg-primary);
+	color: var(--text-primary);
+	font-weight: var(--font-semibold);
+	cursor: pointer;
+	transition: all var(--transition-normal);
+}
+
+.guest-button:hover {
+	background: var(--bg-secondary);
+	border-color: var(--primary-color);
+	color: var(--primary-color);
+}
+
 .login-footer {
 	margin: var(--spacing-sm) 0 0 0;
 	color: var(--text-secondary);

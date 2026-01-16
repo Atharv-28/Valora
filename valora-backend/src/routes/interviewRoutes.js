@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const interviewController = require('../controllers/interviewController');
+const { optionalAuth } = require('../middleware/optionalAuth');
 
 // Configure multer for memory storage (better for cloud deployment like Render)
 // Files are stored in memory as Buffer objects, not saved to disk
@@ -22,10 +23,11 @@ const upload = multer({
   }
 });
 
-// Routes
-router.post('/init', upload.single('resume'), interviewController.initializeInterview);
-router.post('/message', interviewController.sendMessage);
-router.post('/end', interviewController.endInterview);
+// Routes - optionalAuth allows both authenticated and guest users
+router.post('/init', optionalAuth, upload.single('resume'), interviewController.initializeInterview);
+router.post('/message', optionalAuth, interviewController.sendMessage);
+router.post('/end', optionalAuth, interviewController.endInterview);
 router.get('/status', interviewController.getSessionStatus);
+router.get('/report/:sessionId', optionalAuth, interviewController.generateReport);
 
 module.exports = router;

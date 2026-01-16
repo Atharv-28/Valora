@@ -1,132 +1,121 @@
-import React, { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import './signup.css'
+import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
+import './login.css'; // Reuse login styles
 
 export const Signup = () => {
-	const [form, setForm] = useState({
-		name: '',
-		email: '',
-		password: '',
-		confirmPassword: '',
-	})
-	const [status, setStatus] = useState('idle') // idle | submitting
-	const [error, setError] = useState('')
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { signup } = useAuth();
+  const navigate = useNavigate();
 
-	const passwordMismatch = useMemo(() => {
-		if (!form.password || !form.confirmPassword) return false
-		return form.password !== form.confirmPassword
-	}, [form.confirmPassword, form.password])
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      return setError('Passwords do not match');
+    }
 
-	const onChange = (e) => {
-		const { name, value } = e.target
-		setForm((prev) => ({ ...prev, [name]: value }))
-		setError('')
-	}
+    if (password.length < 6) {
+      return setError('Password must be at least 6 characters');
+    }
 
-	const onSubmit = (e) => {
-		e.preventDefault()
-		setError('')
+    try {
+      setError('');
+      setLoading(true);
+      await signup(email, password);
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Failed to create account: ' + err.message);
+      console.error('Signup error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-		if (passwordMismatch) {
-			setError('Passwords do not match.')
-			return
-		}
+  const handleGuestMode = () => {
+    navigate('/start-interview');
+  };
 
-		setStatus('submitting')
+  return (
+    <main className="login-page">
+      <div className="login-container">
+        <header className="login-header">
+          <h1 className="login-title">Sign up</h1>
+          <p className="login-subtitle">Create your Valora account.</p>
+        </header>
 
-		// Auth is not wired yet (no backend endpoint). Keep UX minimal.
-		setTimeout(() => {
-			setStatus('idle')
-			setError('Sign up is not configured yet. Please try again later.')
-		}, 400)
-	}
+        <section className="login-card" aria-label="Signup form">
+          <form className="login-form" onSubmit={handleSubmit}>
+            <div className="login-field">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+              />
+            </div>
 
-	return (
-		<main className="signup-page">
-			<div className="signup-container">
-				<header className="signup-header">
-					<h1 className="signup-title">Create account</h1>
-					<p className="signup-subtitle">Start preparing with Valora.</p>
-				</header>
+            <div className="login-field">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
 
-				<section className="signup-card" aria-label="Sign up form">
-					<form className="signup-form" onSubmit={onSubmit}>
-						<div className="signup-field">
-							<label htmlFor="name">Name</label>
-							<input
-								id="name"
-								name="name"
-								type="text"
-								autoComplete="name"
-								value={form.name}
-								onChange={onChange}
-								placeholder="Your name"
-								required
-							/>
-						</div>
+            <div className="login-field">
+              <label htmlFor="confirmPassword">Confirm Password</label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
 
-						<div className="signup-field">
-							<label htmlFor="email">Email</label>
-							<input
-								id="email"
-								name="email"
-								type="email"
-								autoComplete="email"
-								value={form.email}
-								onChange={onChange}
-								placeholder="you@example.com"
-								required
-							/>
-						</div>
+            {error && (
+              <p className="login-error" role="alert">
+                {error}
+              </p>
+            )}
 
-						<div className="signup-field">
-							<label htmlFor="password">Password</label>
-							<input
-								id="password"
-								name="password"
-								type="password"
-								autoComplete="new-password"
-								value={form.password}
-								onChange={onChange}
-								placeholder="••••••••"
-								required
-							/>
-						</div>
+            <button className="login-submit" type="submit" disabled={loading}>
+              {loading ? 'Creating account…' : 'Create account'}
+            </button>
 
-						<div className="signup-field">
-							<label htmlFor="confirmPassword">Confirm password</label>
-							<input
-								id="confirmPassword"
-								name="confirmPassword"
-								type="password"
-								autoComplete="new-password"
-								value={form.confirmPassword}
-								onChange={onChange}
-								placeholder="••••••••"
-								required
-								aria-invalid={passwordMismatch ? 'true' : 'false'}
-							/>
-							{passwordMismatch && (
-								<p className="signup-hint" role="status">Passwords must match.</p>
-							)}
-						</div>
+            <div className="auth-divider">
+              <span>OR</span>
+            </div>
 
-						{error && (
-							<p className="signup-error" role="alert">
-								{error}
-							</p>
-						)}
+            <button type="button" onClick={handleGuestMode} className="guest-button">
+              Continue as Guest
+            </button>
 
-						<button className="signup-submit" type="submit" disabled={status === 'submitting'}>
-							{status === 'submitting' ? 'Creating…' : 'Create account'}
-						</button>
-
-						<p className="signup-footer">
-							Already have an account? <Link to="/login">Log in</Link>
-						</p>
-					</form>
-				</section>
-			</div>
-		</main>
-	)
-}
+            <p className="login-footer">
+              Already have an account? <Link to="/login">Log in</Link>
+            </p>
+          </form>
+        </section>
+      </div>
+    </main>
+  );
+};

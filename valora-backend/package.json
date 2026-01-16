@@ -8,7 +8,12 @@
     "dev": "nodemon src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["interview", "ai", "gemini", "backend"],
+  "keywords": [
+    "interview",
+    "ai",
+    "gemini",
+    "backend"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
@@ -17,6 +22,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "firebase-admin": "^13.6.0",
     "multer": "^2.0.2",
     "path": "^0.12.7",
     "pdf-parse": "^1.1.1",

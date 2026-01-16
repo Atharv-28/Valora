@@ -9,6 +9,8 @@ import { ContactUs } from './pages/ContactUs';
 import { Login } from './pages/login';
 import { Signup } from './pages/signup';
 import { AboutUs } from './pages/AboutUs';
+import Dashboard from './pages/dashboard';
+import { AuthProvider } from './contexts/AuthContext';
 
 function AppContent() {
   const location = useLocation();
@@ -22,6 +24,7 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path="/start-interview" element={<StartInterview />} />
           <Route path="/interview" element={<Interview />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/login" element={<Login />} />
@@ -35,9 +38,11 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }
 

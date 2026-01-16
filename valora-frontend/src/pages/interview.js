@@ -29,7 +29,10 @@ export const Interview = () => {
     const [timeRemaining, setTimeRemaining] = useState(0);
     const [totalTime, setTotalTime] = useState(0);
     const timerRef = useRef(null);
+    const timeRemainingRef = useRef(0); // Track current time remaining to avoid stale closures
     const [showInterviewEndModal, setShowInterviewEndModal] = useState(false);
+    const [reportData, setReportData] = useState(null);
+    const [isLoadingReport, setIsLoadingReport] = useState(false);
     
     const interviewData = location.state;
 
@@ -44,6 +47,7 @@ export const Interview = () => {
             const timeInSeconds = parseInt(interviewData.timeLimit) * 60;
             setTimeRemaining(timeInSeconds);
             setTotalTime(timeInSeconds);
+            timeRemainingRef.current = timeInSeconds; // Initialize ref
         }
 
         // Initialize camera and microphone
@@ -228,13 +232,16 @@ export const Interview = () => {
 
         timerRef.current = setInterval(() => {
             setTimeRemaining((prev) => {
+                const newTime = prev <= 1 ? 0 : prev - 1;
+                timeRemainingRef.current = newTime; // Update ref with latest value
+                
                 if (prev <= 1) {
                     // Time's up!
                     clearInterval(timerRef.current);
                     handleTimeUp();
                     return 0;
                 }
-                return prev - 1;
+                return newTime;
             });
         }, 1000);
     };
@@ -262,10 +269,30 @@ export const Interview = () => {
         setShowInterviewEndModal(true);
     };
 
-    const handleViewReport = () => {
-        // TODO: Navigate to report page when implemented
-        setShowInterviewEndModal(false);
-        navigate('/');
+    const handleViewReport = async () => {
+        if (!sessionIdRef.current) {
+            alert('Session ID not available. Cannot generate report.');
+            return;
+        }
+
+        setIsLoadingReport(true);
+        try {
+            console.log('📊 Fetching report for session:', sessionIdRef.current);
+            const response = await interviewApi.getReport(sessionIdRef.current);
+            console.log('✅ Report received:', response);
+            
+            if (response.success && response.report) {
+                setReportData(response.report);
+                // Modal will update to show report
+            } else {
+                alert('Failed to generate report. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error fetching report:', error);
+            alert('Error generating report: ' + error.message);
+        } finally {
+            setIsLoadingReport(false);
+        }
     };
 
     const handleEndModalClose = () => {
@@ -279,37 +306,7 @@ export const Interview = () => {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const captureSnapshot = () => {
-        if (!videoRef.current || !videoEnabled) {
-            return null;
-        }
-
-        try {
-            // Create a canvas element if not exists
-            if (!canvasRef.current) {
-                canvasRef.current = document.createElement('canvas');
-            }
-
-            const canvas = canvasRef.current;
-            const video = videoRef.current;
-
-            // Set canvas dimensions to match video
-            canvas.width = video.videoWidth || 640;
-            canvas.height = video.videoHeight || 480;
-
-            // Draw current video frame to canvas
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // Convert canvas to base64 image
-            const snapshot = canvas.toDataURL('image/jpeg', 0.8);
-            console.log('📸 Snapshot captured successfully');
-            return snapshot;
-        } catch (error) {
-            console.error('❌ Error capturing snapshot:', error);
-            return null;
-        }
-    };
+    // Snapshot mechanism removed to reduce API usage
 
     const getTimerColor = () => {
         const percentage = (timeRemaining / totalTime) * 100;
@@ -365,38 +362,49 @@ export const Interview = () => {
         
         setIsProcessing(true);
         
-        // Capture user snapshot
-        const userSnapshot = captureSnapshot();
-        console.log(`📸 User snapshot: ${userSnapshot ? 'captured' : 'not available'}`);
-        
         // Add user message to transcript
         setTranscript(prev => [...prev, { speaker: 'user', text: userMessage }]);
 
         try {
             console.log('📤 Sending to backend...');
-            console.log(`⏱️ Remaining time: ${timeRemaining} seconds`);
+            console.log(`⏱️ Remaining time: ${timeRemainingRef.current} seconds`);
             console.log('⏳ Waiting for complete response from Gemini (no timeout)...');
             
             // Send message to backend with additional data - wait for complete response
             const response = await interviewApi.sendMessage(currentSessionId, userMessage, {
                 jobPosition: interviewData.jobPosition,
                 interviewType: interviewData.interviewType,
-                timeRemaining: timeRemaining,
-                snapshot: userSnapshot
+                timeRemaining: timeRemainingRef.current // Use ref for latest value
             });
             console.log('✅ Response received:', response);
             console.log(`📊 Response length: ${response.message?.length} characters`);
             console.log(`⏰ Should end interview: ${response.shouldEndInterview || false}`);
 
-            const botResponse = response.message;
-            setBotMessage(botResponse);
-
-            // Add bot response to transcript
-            setTranscript(prev => [...prev, { speaker: 'bot', text: botResponse }]);
-
-            console.log('🔊 AI is speaking...');
-            // Speak the response
-            await textToSpeech.speak(botResponse);
+            let botResponse = response.message;
+            
+            // If outro contains report, extract only the closing statement for speaking
+            if (response.shouldEndInterview && botResponse.includes('---REPORT---')) {
+                const reportIndex = botResponse.indexOf('---REPORT---');
+                const closingStatement = botResponse.substring(0, reportIndex).trim();
+                console.log('📊 Report detected in outro, will only speak closing statement');
+                
+                // Set the closing statement for display and speech
+                setBotMessage(closingStatement);
+                
+                // Add only closing statement to transcript (report will be fetched separately)
+                setTranscript(prev => [...prev, { speaker: 'bot', text: closingStatement }]);
+                
+                console.log('🔊 AI is speaking closing statement...');
+                await textToSpeech.speak(closingStatement);
+            } else {
+                // Normal response - speak everything
+                setBotMessage(botResponse);
+                setTranscript(prev => [...prev, { speaker: 'bot', text: botResponse }]);
+                
+                console.log('🔊 AI is speaking...');
+                await textToSpeech.speak(botResponse);
+            }
+            
             console.log('✅ AI finished speaking');
             
             // Check if interview should end
@@ -585,7 +593,7 @@ export const Interview = () => {
             )}
 
             {/* Interview End Modal */}
-            {showInterviewEndModal && (
+            {showInterviewEndModal && !reportData && (
                 <div className="interview-end-overlay">
                     <div className="interview-end-modal">
                         <div className="end-modal-icon">🎉</div>
@@ -593,11 +601,111 @@ export const Interview = () => {
                         <p>Thank you for participating in the Valora AI interview!</p>
                         <p className="end-modal-subtitle">Your responses have been recorded and analyzed.</p>
                         <div className="end-modal-actions">
-                            <button className="view-report-btn" onClick={handleViewReport}>
-                                📊 View Report
+                            <button 
+                                className="view-report-btn" 
+                                onClick={handleViewReport}
+                                disabled={isLoadingReport}
+                            >
+                                {isLoadingReport ? '⏳ Generating Report...' : '📊 View Report'}
                             </button>
                             <button className="close-end-btn" onClick={handleEndModalClose}>
                                 Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Report Display Modal */}
+            {reportData && (
+                <div className="report-overlay">
+                    <div className="report-modal">
+                        <div className="report-header">
+                            <h2>📊 Interview Performance Report</h2>
+                            <button className="close-report-btn" onClick={handleEndModalClose}>✕</button>
+                        </div>
+                        
+                        <div className="report-content">
+                            {/* Overall Score */}
+                            <div className="report-score-section">
+                                <div className="overall-score">
+                                    <span className="score-label">Overall Score</span>
+                                    <span className="score-value">{reportData.overallScore}/10</span>
+                                </div>
+                                <div className="score-breakdown">
+                                    <div className="score-item">
+                                        <span>Technical Accuracy</span>
+                                        <span className="score">{reportData.scoringBreakdown?.technicalAccuracy}/10</span>
+                                    </div>
+                                    <div className="score-item">
+                                        <span>Communication Clarity</span>
+                                        <span className="score">{reportData.scoringBreakdown?.communicationClarity}/10</span>
+                                    </div>
+                                    <div className="score-item">
+                                        <span>Confidence Index</span>
+                                        <span className="score">{reportData.scoringBreakdown?.confidenceIndex}/10</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Summary */}
+                            {reportData.summary && (
+                                <div className="report-section">
+                                    <h3>📝 Summary</h3>
+                                    <p>{reportData.summary}</p>
+                                </div>
+                            )}
+
+                            {/* Strengths */}
+                            {reportData.strengths && reportData.strengths.length > 0 && (
+                                <div className="report-section">
+                                    <h3>💪 Strengths</h3>
+                                    <ul className="report-list strengths-list">
+                                        {reportData.strengths.map((strength, index) => (
+                                            <li key={index}>{strength}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Top Mistakes */}
+                            {reportData.topMistakes && reportData.topMistakes.length > 0 && (
+                                <div className="report-section">
+                                    <h3>⚠️ Areas for Improvement</h3>
+                                    <ul className="report-list mistakes-list">
+                                        {reportData.topMistakes.map((mistake, index) => (
+                                            <li key={index}>{mistake}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Question Analysis */}
+                            {reportData.questionAnalysis && reportData.questionAnalysis.length > 0 && (
+                                <div className="report-section">
+                                    <h3>💬 Question-by-Question Analysis</h3>
+                                    <div className="qa-analysis">
+                                        {reportData.questionAnalysis.map((qa, index) => (
+                                            <div key={index} className="qa-item">
+                                                <div className="qa-question">
+                                                    <strong>Q{index + 1}:</strong> {qa.question}
+                                                </div>
+                                                <div className="qa-answer">
+                                                    <strong>Your Answer:</strong> {qa.answer}
+                                                </div>
+                                                <div className="qa-feedback">
+                                                    <strong>Feedback:</strong> {qa.feedback}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="report-footer">
+                            <button className="close-report-footer-btn" onClick={handleEndModalClose}>
+                                Close Report
                             </button>
                         </div>
                     </div>

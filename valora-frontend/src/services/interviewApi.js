@@ -77,6 +77,23 @@ class InterviewApiService {
             throw error;
         }
     }
+
+    async getReport(sessionId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/interview/report/${sessionId}`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching report:', error);
+            throw error;
+        }
+    }
 }
 
 export default new InterviewApiService();
