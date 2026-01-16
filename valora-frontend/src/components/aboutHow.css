@@ -1,21 +1,24 @@
 .ab-how-container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 4rem 1.5rem;
+  padding: 4.5rem 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 4rem;
+  gap: 4.5rem;
 }
 
-/* Each step */
+/* ----------------------------- */
+/* Step layout */
+/* ----------------------------- */
+
 .steps {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 3rem;
+  gap: 3.5rem;
   align-items: center;
 }
 
-/* Alternate layout */
+/* Alternate left-right layout */
 .steps:nth-child(even) {
   direction: rtl;
 }
@@ -25,7 +28,10 @@
   direction: ltr;
 }
 
-/* Image placeholder card */
+/* ----------------------------- */
+/* Image card */
+/* ----------------------------- */
+
 .step-img {
   height: 260px;
   background: #f5f9ff;
@@ -33,16 +39,32 @@
   border: 1px solid #e3edff;
   box-shadow: 0 8px 24px rgba(0, 90, 200, 0.08);
   position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease;
 }
 
-/* Step content */
+.step-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 1.25rem;
+}
+
+/* ----------------------------- */
+/* Step content card */
+/* ----------------------------- */
+
 .step-info {
   background: #ffffff;
-  padding: 2rem 2.5rem;
+  padding: 2.2rem 2.6rem;
   border-radius: 16px;
   border: 1px solid #e6efff;
   box-shadow: 0 10px 30px rgba(0, 90, 200, 0.1);
   position: relative;
+  transition: transform 0.25s ease;
 }
 
 /* Step number badge */
@@ -50,7 +72,7 @@
   position: absolute;
   top: -18px;
   left: -18px;
-  background: #1e88ff;
+  background: var(--primary-color);
   color: #ffffff;
   width: 48px;
   height: 48px;
@@ -65,41 +87,58 @@
   font-weight: 600;
 }
 
-/* Headings */
+/* Title */
 .step-info h3 {
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-weight: 600;
   color: #0f2a44;
   margin-bottom: 0.75rem;
 }
 
-/* Description text */
+/* Description */
 .step-info p {
   font-size: 0.95rem;
-  line-height: 1.6;
+  line-height: 1.65;
   color: #4a5d73;
 }
 
-/* ------------------- */
-/* Responsive (Mobile) */
-/* ------------------- */
+/* ----------------------------- */
+/* Hover polish */
+/* ----------------------------- */
+
+.steps:hover .step-img,
+.steps:hover .step-info {
+  transform: translateY(-4px);
+}
+
+/* ----------------------------- */
+/* Responsive (Tablet + Mobile) */
+/* ----------------------------- */
 
 @media (max-width: 900px) {
+  .ab-how-container {
+    padding: 3.5rem 1.25rem;
+  }
+
   .steps {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 1.75rem;
   }
 
   .steps:nth-child(even) {
     direction: ltr;
   }
 
+  .step-img {
+    height: 220px;
+  }
+
+  .step-img img {
+    padding: 1rem;
+  }
+
   .step-no {
     left: 16px;
     top: -20px;
-  }
-
-  .step-img {
-    height: 220px;
   }
 }

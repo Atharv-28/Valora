@@ -1,3 +1,7 @@
+import Step1 from '../assets/About us step-1.png';
+import Step2 from '../assets/About us step-2.png';
+import Step3 from '../assets/About us step-3.png';
+import Step4 from '../assets/About us step-4.png';
 import './aboutHow.css'
 
 export const AboutHow = () => {
@@ -5,7 +9,7 @@ export const AboutHow = () => {
         <div className="ab-how-container">
             <div className='steps'>
                 <div className='step-img'>
-
+                    <img src={Step1} alt='Step-1' />
                 </div>
 
                 <div className='step-info'>
@@ -30,7 +34,7 @@ export const AboutHow = () => {
 
             <div className='steps'>
                 <div className='step-img'>
-
+                    <img src={Step2} alt='Step-2' />
                 </div>
 
                 <div className='step-info'>
@@ -54,7 +58,7 @@ export const AboutHow = () => {
 
             <div className='steps'>
                 <div className='step-img'>
-
+                    <img src={Step3} alt='Step-3' />
                 </div>
 
                 <div className='step-info'>
@@ -78,7 +82,7 @@ export const AboutHow = () => {
 
             <div className='steps'>
                 <div className='step-img'>
-
+                    <img src={Step4} alt='Step-4' />
                 </div>
 
                 <div className='step-info'>
