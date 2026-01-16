@@ -1,0 +1,19 @@
+{
+  "files": {
+    "main.css": "/static/css/main.22bf5502.css",
+    "main.js": "/static/js/main.29e2d3de.js",
+    "static/js/453.a33769a6.chunk.js": "/static/js/453.a33769a6.chunk.js",
+    "static/media/Valora-transparent-logo.png": "/static/media/Valora-transparent-logo.227e1887016672e88daa.png",
+    "static/media/Valora-transparent-logo-horizontal.png": "/static/media/Valora-transparent-logo-horizontal.b370a01a09de2b1b0583.png",
+    "static/media/Firebase-logo.png": "/static/media/Firebase-logo.85f60d1279a9d187c31f.png",
+    "static/media/Gemini-logo.png": "/static/media/Gemini-logo.01dce2d31ed7bb95bfcd.png",
+    "index.html": "/index.html",
+    "main.22bf5502.css.map": "/static/css/main.22bf5502.css.map",
+    "main.29e2d3de.js.map": "/static/js/main.29e2d3de.js.map",
+    "453.a33769a6.chunk.js.map": "/static/js/453.a33769a6.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.22bf5502.css",
+    "static/js/main.29e2d3de.js"
+  ]
+}

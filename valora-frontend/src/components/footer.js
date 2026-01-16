@@ -13,9 +13,9 @@ export const Footer = () => {
                 <div className="up-footer-2">
                     <h4 className='dev-title'>Developers</h4>
                     <div className="developer-names">
-                        <a href="https://portfolio-git-main-atharv-28s-projects.vercel.app/" target="_blank" >Atharv Tambekar</a>
-                        <a href="https://siddharth-11-portfolio.netlify.app/" target="_blank" >Siddharth Vhatkar</a>
-                        <a href="https://portfolio-harsh-24.netlify.app/" target="_blank" >Harshvardhan Gadagade</a>
+                        <a href="https://portfolio-git-main-atharv-28s-projects.vercel.app/" target="_blank" rel="noopener noreferrer">Atharv Tambekar</a>
+                        <a href="https://siddharth-11-portfolio.netlify.app/" target="_blank" rel="noopener noreferrer">Siddharth Vhatkar</a>
+                        <a href="https://portfolio-harsh-24.netlify.app/" target="_blank" rel="noopener noreferrer">Harshvardhan Gadagade</a>
                         
                     </div>
                 </div>
