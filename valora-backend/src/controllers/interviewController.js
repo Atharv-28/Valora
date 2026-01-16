@@ -1,5 +1,6 @@
 const geminiService = require('../services/geminiService');
 const resumeService = require('../services/resumeService');
+const reportService = require('../services/reportService');
 const { v4: uuidv4 } = require('uuid');
 
 class InterviewController {
@@ -187,6 +188,67 @@ class InterviewController {
             res.status(500).json({
                 success: false,
                 message: 'Error getting session status',
+                error: error.message
+            });
+        }
+    }
+
+    async generateReport(req, res) {
+        try {
+            console.log('\n📊 ========== GENERATE REPORT REQUEST ==========');
+            const { sessionId } = req.params;
+
+            console.log(`   Session ID: ${sessionId}`);
+
+            if (!sessionId) {
+                console.log('❌ No session ID provided');
+                return res.status(400).json({
+                    success: false,
+                    message: 'Session ID is required'
+                });
+            }
+
+            // Get session data including transcript
+            const sessionData = geminiService.getSessionData(sessionId);
+
+            if (!sessionData) {
+                console.log('❌ Session not found');
+                return res.status(404).json({
+                    success: false,
+                    message: 'Session not found or has expired'
+                });
+            }
+
+            if (!sessionData.transcript || sessionData.transcript.length === 0) {
+                console.log('❌ No transcript data available');
+                return res.status(400).json({
+                    success: false,
+                    message: 'No transcript data available for this session'
+                });
+            }
+
+            console.log(`   Transcript length: ${sessionData.transcript.length} messages`);
+            console.log('   Generating report with AI...');
+
+            // Generate report using AI
+            const report = await reportService.generateReport(sessionData, sessionData.transcript);
+
+            console.log('✅ Report generated successfully');
+            console.log(`   Overall Score: ${report.overallScore}/10`);
+            console.log('📤 Sending report to frontend...');
+
+            res.status(200).json({
+                success: true,
+                report: report
+            });
+
+            console.log('✅ ========== REPORT GENERATION COMPLETE ==========\n');
+
+        } catch (error) {
+            console.error('❌ Error generating report:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error generating report',
                 error: error.message
             });
         }

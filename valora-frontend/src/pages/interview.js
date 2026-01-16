@@ -30,6 +30,8 @@ export const Interview = () => {
     const [totalTime, setTotalTime] = useState(0);
     const timerRef = useRef(null);
     const [showInterviewEndModal, setShowInterviewEndModal] = useState(false);
+    const [reportData, setReportData] = useState(null);
+    const [isLoadingReport, setIsLoadingReport] = useState(false);
     
     const interviewData = location.state;
 
@@ -262,10 +264,30 @@ export const Interview = () => {
         setShowInterviewEndModal(true);
     };
 
-    const handleViewReport = () => {
-        // TODO: Navigate to report page when implemented
-        setShowInterviewEndModal(false);
-        navigate('/');
+    const handleViewReport = async () => {
+        if (!sessionIdRef.current) {
+            alert('Session ID not available. Cannot generate report.');
+            return;
+        }
+
+        setIsLoadingReport(true);
+        try {
+            console.log('📊 Fetching report for session:', sessionIdRef.current);
+            const response = await interviewApi.getReport(sessionIdRef.current);
+            console.log('✅ Report received:', response);
+            
+            if (response.success && response.report) {
+                setReportData(response.report);
+                // Modal will update to show report
+            } else {
+                alert('Failed to generate report. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error fetching report:', error);
+            alert('Error generating report: ' + error.message);
+        } finally {
+            setIsLoadingReport(false);
+        }
     };
 
     const handleEndModalClose = () => {
@@ -585,7 +607,7 @@ export const Interview = () => {
             )}
 
             {/* Interview End Modal */}
-            {showInterviewEndModal && (
+            {showInterviewEndModal && !reportData && (
                 <div className="interview-end-overlay">
                     <div className="interview-end-modal">
                         <div className="end-modal-icon">🎉</div>
@@ -593,11 +615,111 @@ export const Interview = () => {
                         <p>Thank you for participating in the Valora AI interview!</p>
                         <p className="end-modal-subtitle">Your responses have been recorded and analyzed.</p>
                         <div className="end-modal-actions">
-                            <button className="view-report-btn" onClick={handleViewReport}>
-                                📊 View Report
+                            <button 
+                                className="view-report-btn" 
+                                onClick={handleViewReport}
+                                disabled={isLoadingReport}
+                            >
+                                {isLoadingReport ? '⏳ Generating Report...' : '📊 View Report'}
                             </button>
                             <button className="close-end-btn" onClick={handleEndModalClose}>
                                 Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Report Display Modal */}
+            {reportData && (
+                <div className="report-overlay">
+                    <div className="report-modal">
+                        <div className="report-header">
+                            <h2>📊 Interview Performance Report</h2>
+                            <button className="close-report-btn" onClick={handleEndModalClose}>✕</button>
+                        </div>
+                        
+                        <div className="report-content">
+                            {/* Overall Score */}
+                            <div className="report-score-section">
+                                <div className="overall-score">
+                                    <span className="score-label">Overall Score</span>
+                                    <span className="score-value">{reportData.overallScore}/10</span>
+                                </div>
+                                <div className="score-breakdown">
+                                    <div className="score-item">
+                                        <span>Technical Accuracy</span>
+                                        <span className="score">{reportData.scoringBreakdown?.technicalAccuracy}/10</span>
+                                    </div>
+                                    <div className="score-item">
+                                        <span>Communication Clarity</span>
+                                        <span className="score">{reportData.scoringBreakdown?.communicationClarity}/10</span>
+                                    </div>
+                                    <div className="score-item">
+                                        <span>Confidence Index</span>
+                                        <span className="score">{reportData.scoringBreakdown?.confidenceIndex}/10</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Summary */}
+                            {reportData.summary && (
+                                <div className="report-section">
+                                    <h3>📝 Summary</h3>
+                                    <p>{reportData.summary}</p>
+                                </div>
+                            )}
+
+                            {/* Strengths */}
+                            {reportData.strengths && reportData.strengths.length > 0 && (
+                                <div className="report-section">
+                                    <h3>💪 Strengths</h3>
+                                    <ul className="report-list strengths-list">
+                                        {reportData.strengths.map((strength, index) => (
+                                            <li key={index}>{strength}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Top Mistakes */}
+                            {reportData.topMistakes && reportData.topMistakes.length > 0 && (
+                                <div className="report-section">
+                                    <h3>⚠️ Areas for Improvement</h3>
+                                    <ul className="report-list mistakes-list">
+                                        {reportData.topMistakes.map((mistake, index) => (
+                                            <li key={index}>{mistake}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Question Analysis */}
+                            {reportData.questionAnalysis && reportData.questionAnalysis.length > 0 && (
+                                <div className="report-section">
+                                    <h3>💬 Question-by-Question Analysis</h3>
+                                    <div className="qa-analysis">
+                                        {reportData.questionAnalysis.map((qa, index) => (
+                                            <div key={index} className="qa-item">
+                                                <div className="qa-question">
+                                                    <strong>Q{index + 1}:</strong> {qa.question}
+                                                </div>
+                                                <div className="qa-answer">
+                                                    <strong>Your Answer:</strong> {qa.answer}
+                                                </div>
+                                                <div className="qa-feedback">
+                                                    <strong>Feedback:</strong> {qa.feedback}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="report-footer">
+                            <button className="close-report-footer-btn" onClick={handleEndModalClose}>
+                                Close Report
                             </button>
                         </div>
                     </div>

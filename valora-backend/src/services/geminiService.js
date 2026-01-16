@@ -111,7 +111,8 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
                 timeLimit,
                 difficulty,
                 startTime: new Date(),
-                messageCount: 0
+                messageCount: 0,
+                transcript: [] // Store conversation history
             });
 
             console.log(`   📤 Sending initial message to Gemini...`);
@@ -151,16 +152,9 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
                 const seconds = timeRemaining % 60;
                 enhancedMessage += `\n\n[INTERVIEWER NOTE: Time remaining in interview: ${minutes}m ${seconds}s`;
                 
-                // If less than 1 minute remaining, instruct AI to wrap up
-                if (timeRemaining < 60) {
-                    enhancedMessage += `. CRITICAL: Less than 1 minute remaining! You MUST conclude the interview now. Provide a brief, warm closing statement thanking the candidate and wishing them well. Do NOT ask any more questions. Keep it under 2 sentences.]`;
-                } else {
-                    enhancedMessage += `]`;
-                }
-                
-                // If less than 1 minute remaining, instruct AI to wrap up
-                if (timeRemaining < 60) {
-                    enhancedMessage += `. CRITICAL: Less than 1 minute remaining! You MUST conclude the interview now. Provide a brief, warm closing statement thanking the candidate and wishing them well. Do NOT ask any more questions. Keep it under 2 sentences.]`;
+                // If less than 90 seconds remaining, instruct AI to wrap up after this question
+                if (timeRemaining < 90) {
+                    enhancedMessage += `. CRITICAL: Less than 90 seconds remaining! After answering this question, you MUST conclude the interview. Provide a brief, warm closing statement thanking the candidate and wishing them well. Do NOT ask any more questions after this response. Keep the closing under 2 sentences.]`;
                 } else {
                     enhancedMessage += `]`;
                 }
@@ -200,11 +194,17 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
             
             session.messageCount++;
 
+            // Store in transcript
+            session.transcript.push(
+                { speaker: 'user', text: message },
+                { speaker: 'bot', text: response }
+            );
+
             console.log(`   ✅ Got response from Gemini: "${response.substring(0, 100)}${response.length > 100 ? '...' : ''}"`);
             console.log(`   Message count: ${session.messageCount}`);
             
-            // Check if interview should end (less than 1 minute remaining)
-            const shouldEndInterview = timeRemaining !== null && timeRemaining < 60;
+            // Check if interview should end (less than 90 seconds remaining - matches the outro threshold)
+            const shouldEndInterview = timeRemaining !== null && timeRemaining < 90;
             
             return {
                 message: response,
@@ -233,7 +233,15 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
                 interviewType: session.interviewType
             };
 
-            this.activeSessions.delete(sessionId);
+            // Mark session as ended but keep it for report generation
+            session.ended = true;
+            session.endTime = new Date();
+            
+            // Auto-cleanup after 1 hour to prevent memory leaks
+            setTimeout(() => {
+                this.activeSessions.delete(sessionId);
+                console.log(`🗑️ Session ${sessionId} auto-cleaned up after 1 hour`);
+            }, 3600000); // 1 hour
 
             return { success: true, sessionInfo };
         } catch (error) {
@@ -244,6 +252,25 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
 
     getActiveSessionCount() {
         return this.activeSessions.size;
+    }
+
+    getSessionData(sessionId) {
+        const session = this.activeSessions.get(sessionId);
+        if (!session) {
+            return null;
+        }
+
+        return {
+            sessionId,
+            jobDescription: session.jobDescription,
+            jobPosition: session.jobPosition,
+            interviewType: session.interviewType,
+            timeLimit: session.timeLimit,
+            difficulty: session.difficulty,
+            transcript: session.transcript,
+            messageCount: session.messageCount,
+            startTime: session.startTime
+        };
     }
 }
 

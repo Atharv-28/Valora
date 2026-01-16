@@ -27,5 +27,6 @@ router.post('/init', upload.single('resume'), interviewController.initializeInte
 router.post('/message', interviewController.sendMessage);
 router.post('/end', interviewController.endInterview);
 router.get('/status', interviewController.getSessionStatus);
+router.get('/report/:sessionId', interviewController.generateReport);
 
 module.exports = router;
