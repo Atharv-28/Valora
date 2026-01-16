@@ -14,55 +14,35 @@ class GeminiService {
     }
 
     createInterviewPrompt(jobDescription, jobPosition, interviewType, resumeText, timeLimit, difficulty) {
-        // Define interview focus based on type
-        let interviewFocus = '';
-        if (interviewType === 'technical') {
-            interviewFocus = 'Focus on technical skills, problem-solving, coding concepts, system design, and technical expertise.';
-        } else if (interviewType === 'hr') {
-            interviewFocus = 'Focus on behavioral questions, team fit, communication skills, career goals, and soft skills.';
-        } else if (interviewType === 'hybrid') {
-            interviewFocus = 'Balance between technical and HR questions. Cover both technical skills AND behavioral/soft skills aspects.';
-        }
+        // Concise interview focus
+        const focusMap = {
+            'technical': 'Technical skills, problem-solving, coding, system design.',
+            'hr': 'Behavioral, teamwork, communication, career goals.',
+            'hybrid': 'Balance technical AND behavioral questions.'
+        };
 
-        // Define difficulty expectations
-        let difficultyGuidance = '';
-        if (difficulty === 'easy') {
-            difficultyGuidance = 'Keep questions straightforward and fundamental. Focus on basic concepts and understanding.';
-        } else if (difficulty === 'medium') {
-            difficultyGuidance = 'Ask moderately challenging questions that require practical knowledge and some analytical thinking.';
-        } else if (difficulty === 'hard') {
-            difficultyGuidance = 'Ask advanced, complex questions that test deep understanding, problem-solving, and critical thinking.';
-        }
+        // Concise difficulty guidance
+        const difficultyMap = {
+            'easy': 'Ask straightforward, fundamental questions.',
+            'medium': 'Ask moderately challenging practical questions.',
+            'hard': 'Ask advanced questions requiring deep analysis.'
+        };
 
-        const basePrompt = `You are Valora, an AI interviewer conducting a ${interviewType} interview for a ${jobPosition} position.
+        const basePrompt = `You are Valora, AI interviewer for ${jobPosition} (${interviewType}, ${timeLimit}min, ${difficulty}).
 
-Interview Configuration:
-- Time Limit: ${timeLimit} minutes
-- Difficulty Level: ${difficulty}
-- Interview Type: ${interviewType}
+Job: ${jobDescription}
 
-Job Description:
-${jobDescription}
+Resume: ${resumeText || 'Will analyze separately'}
 
-Candidate's Resume:
-${resumeText || 'Resume information will be analyzed separately'}
+Role: ${focusMap[interviewType] || focusMap['technical']} ${difficultyMap[difficulty] || difficultyMap['medium']}
 
-Your role:
-${interviewFocus}
-${difficultyGuidance}
-- Ask relevant interview questions based on the job description and position level
-- Be conversational and professional
-- Ask follow-up questions based on candidate responses but not too many based on the difficulty.
-- Adjust pacing to fit within the ${timeLimit}-minute time frame
+RULES:
+1. End EVERY response with a question (?)
+2. Max 2-3 sentences per response
+3. No repeated questions
+4. Format: [Brief comment] + [Question]
 
-CRITICAL RULES:
-1. EVERY response MUST end with a clear, direct question
-2. Keep responses concise (2-3 sentences maximum, including the question)
-3. Never repeat questions already asked
-4. Format: [Brief acknowledgment/comment] + [Clear Question]
-5. Example: "That's great experience with React. How would you handle state management in a large-scale application?"
-
-Remember: ALWAYS end your response with a question mark (?). Your response is incomplete without a question.`;
+Example: "Good React experience. How would you handle state in large apps?"`;
 
         return basePrompt;
     }
@@ -94,17 +74,17 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
                     },
                     {
                         role: 'model',
-                        parts: [{ text: 'Understood. I am ready to conduct the interview. Every response will end with a clear question.' }]
+                        parts: [{ text: 'Ready to interview. Will end every response with a question.' }]
                     }
                 ],
                 generationConfig: {
-                    maxOutputTokens: 500,
+                    maxOutputTokens: 250, // Reduced from 500
                     temperature: 0.7,
                 }
             });
 
             this.activeSessions.set(sessionId, {
-                chat,
+                chat, // The chat object maintains FULL conversation history automatically via Gemini SDK
                 jobDescription,
                 jobPosition,
                 interviewType,
@@ -112,7 +92,11 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
                 difficulty,
                 startTime: new Date(),
                 messageCount: 0,
-                transcript: [] // Store conversation history
+                transcript: [] // Store full conversation for report generation
+                // IMPORTANT: The Gemini SDK's chat.sendMessage() automatically includes ALL previous
+                // messages in each request. The AI maintains full context throughout the interview.
+                // Token optimization is achieved through: compressed prompts, reduced maxOutputTokens,
+                // and embedded report generation to avoid re-sending transcript separately.
             });
 
             console.log(`   📤 Sending initial message to Gemini...`);
@@ -129,12 +113,11 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
         }
     }
 
-    async sendMessage(sessionId, message, timeRemaining = null, snapshot = null) {
+    async sendMessage(sessionId, message, timeRemaining = null) {
         try {
             console.log(`\n💬 User message received for session: ${sessionId}`);
             console.log(`   Message: "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"`);
             console.log(`   Time Remaining: ${timeRemaining !== null ? `${timeRemaining} seconds` : 'Not provided'}`);
-            console.log(`   Snapshot: ${snapshot ? 'Provided for analysis' : 'Not provided'}`);
             
             const session = this.activeSessions.get(sessionId);
             
@@ -150,46 +133,18 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
             if (timeRemaining !== null) {
                 const minutes = Math.floor(timeRemaining / 60);
                 const seconds = timeRemaining % 60;
-                enhancedMessage += `\n\n[INTERVIEWER NOTE: Time remaining in interview: ${minutes}m ${seconds}s`;
+                enhancedMessage += `\n\n[INTERVIEWER NOTE: Time remaining: ${minutes}m ${seconds}s`;
                 
-                // If less than 90 seconds remaining, instruct AI to wrap up after this question
-                if (timeRemaining < 90) {
-                    enhancedMessage += `. CRITICAL: Less than 90 seconds remaining! After answering this question, you MUST conclude the interview. Provide a brief, warm closing statement thanking the candidate and wishing them well. Do NOT ask any more questions after this response. Keep the closing under 2 sentences.]`;
+                // If less than 60 seconds remaining, instruct AI to wrap up and generate report
+                if (timeRemaining < 60) {
+                    enhancedMessage += `. CRITICAL: <60s left! End interview after this. Give brief closing (1-2 sentences).\n\nThen add "\n\n---REPORT---\n" followed by JSON report:{"overallScore":<0-10>,"scoringBreakdown":{"technicalAccuracy":<0-10>,"communicationClarity":<0-10>,"confidenceIndex":<0-10>},"questionAnalysis":[{"question":"<q>","answer":"<a>","feedback":"<feedback>"}],"topMistakes":["<m1>","<m2>","<m3>","<m4>","<m5>"],"strengths":["<s1>","<s2>","<s3>","<s4>","<s5>"],"summary":"<2-3 sentences>"}.Reference actual answers.]`;
                 } else {
                     enhancedMessage += `]`;
                 }
             }
 
-            // Prepare message parts
-            const messageParts = [{ text: enhancedMessage }];
-
-            // Add snapshot for visual analysis if provided
-            if (snapshot) {
-                try {
-                    // Remove data URL prefix if present
-                    const base64Data = snapshot.replace(/^data:image\/\w+;base64,/, '');
-                    
-                    messageParts.push({
-                        inlineData: {
-                            mimeType: 'image/jpeg',
-                            data: base64Data
-                        }
-                    });
-                    
-                    // Add instruction for AI to analyze the image
-                    messageParts.push({
-                        text: '\n\n[INTERVIEWER NOTE: Analyze the candidate\'s visual cues from the provided image. Consider their body language, facial expressions, confidence level, nervousness indicators, eye contact, and overall presentation. Subtly adjust your questioning or provide encouragement if needed based on their demeanor.]'
-                    });
-                    
-                    console.log('   📸 Snapshot added to message for visual analysis');
-                } catch (snapshotError) {
-                    console.error('   ⚠️ Error processing snapshot:', snapshotError.message);
-                    // Continue without snapshot if there's an error
-                }
-            }
-
             console.log(`   📤 Sending to Gemini...`);
-            const result = await session.chat.sendMessage(messageParts);
+            const result = await session.chat.sendMessage(enhancedMessage);
             const response = result.response.text();
             
             session.messageCount++;
@@ -203,8 +158,22 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
             console.log(`   ✅ Got response from Gemini: "${response.substring(0, 100)}${response.length > 100 ? '...' : ''}"`);
             console.log(`   Message count: ${session.messageCount}`);
             
-            // Check if interview should end (less than 90 seconds remaining - matches the outro threshold)
-            const shouldEndInterview = timeRemaining !== null && timeRemaining < 90;
+            // Check if interview should end (less than 60 seconds remaining - matches the outro threshold)
+            const shouldEndInterview = timeRemaining !== null && timeRemaining < 60;
+            
+            // Extract report if present in the outro response
+            let extractedReport = null;
+            if (shouldEndInterview && response.includes('---REPORT---')) {
+                const reportStart = response.indexOf('---REPORT---');
+                const reportJson = response.substring(reportStart + 12).trim();
+                try {
+                    extractedReport = JSON.parse(reportJson);
+                    session.report = extractedReport; // Store report in session
+                    console.log('   📊 Report extracted and stored in session');
+                } catch (error) {
+                    console.error('   ⚠️ Failed to parse embedded report:', error.message);
+                }
+            }
             
             return {
                 message: response,
@@ -269,7 +238,8 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
             difficulty: session.difficulty,
             transcript: session.transcript,
             messageCount: session.messageCount,
-            startTime: session.startTime
+            startTime: session.startTime,
+            report: session.report || null // Include pre-generated report if available
         };
     }
 }

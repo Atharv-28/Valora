@@ -22,8 +22,9 @@ class ReportService {
             const result = await this.model.generateContent({
                 contents: [{ role: 'user', parts: [{ text: reportPrompt }] }],
                 generationConfig: {
-                    maxOutputTokens: 3000,
-                    temperature: 0.3, // Lower temperature for more consistent analysis
+                    maxOutputTokens: 2500, // Reduced from 4000 to save tokens
+                    temperature: 0.3,
+                    responseMimeType: "application/json"
                 }
             });
 
@@ -41,75 +42,37 @@ class ReportService {
     }
 
     createReportPrompt(sessionData, transcript) {
-        // Format transcript for analysis
-        const transcriptText = transcript.map((item, index) => {
-            return `${index + 1}. ${item.speaker === 'bot' ? 'INTERVIEWER' : 'CANDIDATE'}: ${item.text}`;
-        }).join('\n\n');
+        // Format transcript concisely
+        const transcriptText = transcript.map((item, idx) => {
+            const speaker = item.speaker === 'bot' ? 'Q' : 'A';
+            return `${idx + 1}. ${speaker}: ${item.text}`;
+        }).join('\n');
 
-        const prompt = `You are an expert interview evaluator. Analyze the following interview transcript and generate a comprehensive performance report.
+        const prompt = `Evaluate interview: ${sessionData.jobPosition} (${sessionData.interviewType}, ${sessionData.difficulty}, ${sessionData.timeLimit}min)
 
-INTERVIEW CONTEXT:
-- Position: ${sessionData.jobPosition}
-- Interview Type: ${sessionData.interviewType}
-- Difficulty Level: ${sessionData.difficulty}
-- Duration: ${sessionData.timeLimit} minutes
-- Job Description: ${sessionData.jobDescription}
+Job: ${sessionData.jobDescription}
 
-INTERVIEW TRANSCRIPT:
+TRANSCRIPT:
 ${transcriptText}
 
-TASK: Generate a detailed interview performance report in the following JSON format. Be thorough, specific, and constructive in your analysis.
-
+Generate JSON report:
 {
-  "overallScore": <number between 0-10 with one decimal place>,
-  "scoringBreakdown": {
-    "technicalAccuracy": <number 0-10 with one decimal>,
-    "communicationClarity": <number 0-10 with one decimal>,
-    "confidenceIndex": <number 0-10 with one decimal>
-  },
-  "questionAnalysis": [
-    {
-      "question": "<interviewer question>",
-      "answer": "<candidate answer>",
-      "feedback": "<detailed constructive feedback on this specific answer>"
-    }
-  ],
-  "topMistakes": [
-    "<mistake/blunder/fumble 1>",
-    "<mistake/blunder/fumble 2>",
-    "<mistake/blunder/fumble 3>",
-    "<mistake/blunder/fumble 4>",
-    "<mistake/blunder/fumble 5>"
-  ],
-  "strengths": [
-    "<strength/what they did correctly 1>",
-    "<strength/what they did correctly 2>",
-    "<strength/what they did correctly 3>",
-    "<strength/what they did correctly 4>",
-    "<strength/what they did correctly 5>"
-  ],
-  "summary": "<2-3 sentence overall summary of the interview performance>"
+  "overallScore": <0-10>,
+  "scoringBreakdown": {"technicalAccuracy":<0-10>,"communicationClarity":<0-10>,"confidenceIndex":<0-10>},
+  "questionAnalysis": [{"question":"<q>","answer":"<a>","feedback":"<specific feedback>"}],
+  "topMistakes": ["<mistake1>","<mistake2>","<mistake3>","<mistake4>","<mistake5>"],
+  "strengths": ["<strength1>","<strength2>","<strength3>","<strength4>","<strength5>"],
+  "summary": "<2-3 sentences>"
 }
 
-EVALUATION CRITERIA:
-1. **Overall Score**: Holistic assessment considering all factors
-2. **Technical Accuracy**: Correctness of technical knowledge, problem-solving ability, depth of understanding
-3. **Communication Clarity**: Ability to articulate thoughts clearly, structure answers well, explain concepts effectively
-4. **Confidence Index**: Body language cues (if visual analysis was done), tone, decisiveness, self-assurance in answers
-5. **Question Analysis**: For EACH interviewer question, provide the candidate's answer and specific feedback
-6. **Top Mistakes**: Identify fumbles, wrong answers, hesitations, poor explanations, missed opportunities
-7. **Strengths**: Highlight what the candidate did well, strong answers, good examples, effective communication
-
-IMPORTANT:
-- Be specific and reference actual parts of the transcript
+Requirements:
+- Be specific, reference actual answers
 - Provide actionable feedback
 - Balance criticism with encouragement
-- If technical interview, focus more on technical accuracy
-- If HR interview, focus more on soft skills and communication
-- If hybrid, balance both aspects
-- Return ONLY valid JSON, no markdown formatting or additional text
-
-Generate the report now:`;
+- Technical interview: focus on accuracy
+- HR interview: focus on soft skills
+- Hybrid: balance both
+- Return ONLY JSON`;
 
         return prompt;
     }
@@ -118,12 +81,42 @@ Generate the report now:`;
         try {
             // Remove markdown code blocks if present
             let cleanedResponse = response.trim();
+            
+            // Remove markdown code blocks
             if (cleanedResponse.startsWith('```json')) {
-                cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
+                cleanedResponse = cleanedResponse.replace(/^```json\s*/g, '');
             } else if (cleanedResponse.startsWith('```')) {
-                cleanedResponse = cleanedResponse.replace(/```\n?/g, '').replace(/```\n?$/g, '');
+                cleanedResponse = cleanedResponse.replace(/^```\s*/g, '');
+            }
+            
+            // Remove trailing markdown if present
+            if (cleanedResponse.endsWith('```')) {
+                cleanedResponse = cleanedResponse.replace(/```\s*$/g, '');
+            }
+            
+            // Try to fix incomplete JSON by finding the last complete object
+            cleanedResponse = cleanedResponse.trim();
+            
+            // If JSON is incomplete, try to find and close it properly
+            if (!cleanedResponse.endsWith('}')) {
+                // Find the last complete field
+                const lastCompletePos = cleanedResponse.lastIndexOf('},');
+                if (lastCompletePos > 0) {
+                    // Truncate after the last complete field and close the JSON
+                    cleanedResponse = cleanedResponse.substring(0, lastCompletePos + 1);
+                    
+                    // Count open braces vs close braces to properly close
+                    const openBraces = (cleanedResponse.match(/{/g) || []).length;
+                    const closeBraces = (cleanedResponse.match(/}/g) || []).length;
+                    const missingBraces = openBraces - closeBraces;
+                    
+                    for (let i = 0; i < missingBraces; i++) {
+                        cleanedResponse += '\n}';
+                    }
+                }
             }
 
+            console.log('   🧹 Cleaned response length:', cleanedResponse.length);
             const reportData = JSON.parse(cleanedResponse);
 
             // Validate the structure
@@ -134,7 +127,7 @@ Generate the report now:`;
             return reportData;
         } catch (error) {
             console.error('❌ Error parsing report response:', error.message);
-            console.error('Raw response:', response);
+            console.error('Raw response (first 500 chars):', response.substring(0, 500));
             
             // Return a fallback structure
             return {
@@ -145,9 +138,9 @@ Generate the report now:`;
                     confidenceIndex: 0
                 },
                 questionAnalysis: [],
-                topMistakes: ['Report generation failed. Please try again.'],
+                topMistakes: ['Report generation encountered an error. The AI response was incomplete or malformed.'],
                 strengths: [],
-                summary: 'Unable to generate report at this time.'
+                summary: 'Unable to generate complete report. Please try again or check interview transcript manually.'
             };
         }
     }

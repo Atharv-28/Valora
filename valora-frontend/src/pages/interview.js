@@ -306,37 +306,7 @@ export const Interview = () => {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const captureSnapshot = () => {
-        if (!videoRef.current || !videoEnabled) {
-            return null;
-        }
-
-        try {
-            // Create a canvas element if not exists
-            if (!canvasRef.current) {
-                canvasRef.current = document.createElement('canvas');
-            }
-
-            const canvas = canvasRef.current;
-            const video = videoRef.current;
-
-            // Set canvas dimensions to match video
-            canvas.width = video.videoWidth || 640;
-            canvas.height = video.videoHeight || 480;
-
-            // Draw current video frame to canvas
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // Convert canvas to base64 image
-            const snapshot = canvas.toDataURL('image/jpeg', 0.8);
-            console.log('📸 Snapshot captured successfully');
-            return snapshot;
-        } catch (error) {
-            console.error('❌ Error capturing snapshot:', error);
-            return null;
-        }
-    };
+    // Snapshot mechanism removed to reduce API usage
 
     const getTimerColor = () => {
         const percentage = (timeRemaining / totalTime) * 100;
@@ -392,10 +362,6 @@ export const Interview = () => {
         
         setIsProcessing(true);
         
-        // Capture user snapshot
-        const userSnapshot = captureSnapshot();
-        console.log(`📸 User snapshot: ${userSnapshot ? 'captured' : 'not available'}`);
-        
         // Add user message to transcript
         setTranscript(prev => [...prev, { speaker: 'user', text: userMessage }]);
 
@@ -408,22 +374,37 @@ export const Interview = () => {
             const response = await interviewApi.sendMessage(currentSessionId, userMessage, {
                 jobPosition: interviewData.jobPosition,
                 interviewType: interviewData.interviewType,
-                timeRemaining: timeRemainingRef.current, // Use ref for latest value
-                snapshot: userSnapshot
+                timeRemaining: timeRemainingRef.current // Use ref for latest value
             });
             console.log('✅ Response received:', response);
             console.log(`📊 Response length: ${response.message?.length} characters`);
             console.log(`⏰ Should end interview: ${response.shouldEndInterview || false}`);
 
-            const botResponse = response.message;
-            setBotMessage(botResponse);
-
-            // Add bot response to transcript
-            setTranscript(prev => [...prev, { speaker: 'bot', text: botResponse }]);
-
-            console.log('🔊 AI is speaking...');
-            // Speak the response
-            await textToSpeech.speak(botResponse);
+            let botResponse = response.message;
+            
+            // If outro contains report, extract only the closing statement for speaking
+            if (response.shouldEndInterview && botResponse.includes('---REPORT---')) {
+                const reportIndex = botResponse.indexOf('---REPORT---');
+                const closingStatement = botResponse.substring(0, reportIndex).trim();
+                console.log('📊 Report detected in outro, will only speak closing statement');
+                
+                // Set the closing statement for display and speech
+                setBotMessage(closingStatement);
+                
+                // Add only closing statement to transcript (report will be fetched separately)
+                setTranscript(prev => [...prev, { speaker: 'bot', text: closingStatement }]);
+                
+                console.log('🔊 AI is speaking closing statement...');
+                await textToSpeech.speak(closingStatement);
+            } else {
+                // Normal response - speak everything
+                setBotMessage(botResponse);
+                setTranscript(prev => [...prev, { speaker: 'bot', text: botResponse }]);
+                
+                console.log('🔊 AI is speaking...');
+                await textToSpeech.speak(botResponse);
+            }
+            
             console.log('✅ AI finished speaking');
             
             // Check if interview should end

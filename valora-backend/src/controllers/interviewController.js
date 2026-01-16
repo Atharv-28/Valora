@@ -88,14 +88,13 @@ class InterviewController {
     async sendMessage(req, res) {
         try {
             console.log('\n💬 ========== MESSAGE EXCHANGE ==========');
-            const { sessionId, message, context, snapshot } = req.body;
+            const { sessionId, message, context } = req.body;
 
             console.log(`📥 Received from frontend:`);
             console.log(`   Session ID: ${sessionId}`);
             console.log(`   User Message: "${message?.substring(0, 100)}${message?.length > 100 ? '...' : ''}"`);
             console.log(`   Context: Position=${context?.jobPosition}, Type=${context?.interviewType}`);
             console.log(`   Time Remaining: ${context?.timeRemaining} seconds`);
-            console.log(`   Snapshot: ${snapshot ? 'Included' : 'Not included'}`);
 
             if (!sessionId || !message) {
                 console.log('❌ Missing session ID or message');
@@ -111,12 +110,11 @@ class InterviewController {
             console.log('🤖 Forwarding message to Gemini...');
             console.log('⏳ Waiting for complete response (no timeout)...');
             
-            // Send message to Gemini with context and snapshot - let it take all the time it needs
+            // Send message to Gemini with context - let it take all the time it needs
             const response = await geminiService.sendMessage(
                 sessionId, 
                 message, 
-                context?.timeRemaining,
-                snapshot
+                context?.timeRemaining
             );
 
             console.log('✅ Response received from Gemini');
@@ -228,12 +226,19 @@ class InterviewController {
             }
 
             console.log(`   Transcript length: ${sessionData.transcript.length} messages`);
-            console.log('   Generating report with AI...');
-
-            // Generate report using AI
-            const report = await reportService.generateReport(sessionData, sessionData.transcript);
-
-            console.log('✅ Report generated successfully');
+            
+            let report;
+            
+            // Check if report was already generated during outro
+            if (sessionData.report) {
+                console.log('   ✅ Using pre-generated report from interview outro');
+                report = sessionData.report;
+            } else {
+                console.log('   Generating report with AI...');
+                // Generate report using AI (fallback if not generated during outro)
+                report = await reportService.generateReport(sessionData, sessionData.transcript);
+                console.log('✅ Report generated successfully');
+            }
             console.log(`   Overall Score: ${report.overallScore}/10`);
             console.log('📤 Sending report to frontend...');
 
