@@ -13,8 +13,33 @@ class GeminiService {
         console.log('✅ Gemini Service initialized with model: gemini-2.5-flash');
     }
 
-    createInterviewPrompt(jobDescription, jobPosition, interviewType, resumeText) {
+    createInterviewPrompt(jobDescription, jobPosition, interviewType, resumeText, timeLimit, difficulty) {
+        // Define interview focus based on type
+        let interviewFocus = '';
+        if (interviewType === 'technical') {
+            interviewFocus = 'Focus on technical skills, problem-solving, coding concepts, system design, and technical expertise.';
+        } else if (interviewType === 'hr') {
+            interviewFocus = 'Focus on behavioral questions, team fit, communication skills, career goals, and soft skills.';
+        } else if (interviewType === 'hybrid') {
+            interviewFocus = 'Balance between technical and HR questions. Cover both technical skills AND behavioral/soft skills aspects.';
+        }
+
+        // Define difficulty expectations
+        let difficultyGuidance = '';
+        if (difficulty === 'easy') {
+            difficultyGuidance = 'Keep questions straightforward and fundamental. Focus on basic concepts and understanding.';
+        } else if (difficulty === 'medium') {
+            difficultyGuidance = 'Ask moderately challenging questions that require practical knowledge and some analytical thinking.';
+        } else if (difficulty === 'hard') {
+            difficultyGuidance = 'Ask advanced, complex questions that test deep understanding, problem-solving, and critical thinking.';
+        }
+
         const basePrompt = `You are Valora, an AI interviewer conducting a ${interviewType} interview for a ${jobPosition} position.
+
+Interview Configuration:
+- Time Limit: ${timeLimit} minutes
+- Difficulty Level: ${difficulty}
+- Interview Type: ${interviewType}
 
 Job Description:
 ${jobDescription}
@@ -23,11 +48,12 @@ Candidate's Resume:
 ${resumeText || 'Resume information will be analyzed separately'}
 
 Your role:
+${interviewFocus}
+${difficultyGuidance}
 - Ask relevant interview questions based on the job description and position level
-- For technical interviews: Focus on technical skills, problem-solving, coding concepts, and system design
-- For HR interviews: Focus on behavioral questions, team fit, communication skills, and career goals
 - Be conversational and professional
 - Ask follow-up questions based on candidate responses
+- Adjust pacing to fit within the ${timeLimit}-minute time frame
 
 CRITICAL RULES:
 1. EVERY response MUST end with a clear, direct question
@@ -41,17 +67,21 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
         return basePrompt;
     }
 
-    async initializeSession(sessionId, jobDescription, jobPosition, interviewType, resumeText = '') {
+    async initializeSession(sessionId, jobDescription, jobPosition, interviewType, resumeText = '', timeLimit = '15', difficulty = 'medium') {
         try {
             console.log(`\n📝 Initializing session: ${sessionId}`);
             console.log(`   Position: ${jobPosition}`);
             console.log(`   Type: ${interviewType}`);
+            console.log(`   Time Limit: ${timeLimit} minutes`);
+            console.log(`   Difficulty: ${difficulty}`);
             
             const systemPrompt = this.createInterviewPrompt(
                 jobDescription,
                 jobPosition,
                 interviewType,
-                resumeText
+                resumeText,
+                timeLimit,
+                difficulty
             );
 
             console.log(`   System prompt length: ${systemPrompt.length} characters`);
@@ -78,6 +108,8 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
                 jobDescription,
                 jobPosition,
                 interviewType,
+                timeLimit,
+                difficulty,
                 startTime: new Date(),
                 messageCount: 0
             });

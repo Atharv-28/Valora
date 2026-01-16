@@ -20,10 +20,12 @@ class InterviewController {
             console.log(`✅ Resume file received: ${req.file.originalname}`);
 
             // Extract form data
-            const { jobDescription, jobPosition, interviewType } = req.body;
+            const { jobDescription, jobPosition, interviewType, timeLimit, difficulty } = req.body;
 
             console.log(`   Job Position: ${jobPosition || 'junior'}`);
             console.log(`   Interview Type: ${interviewType || 'technical'}`);
+            console.log(`   Time Limit: ${timeLimit || '15'} minutes`);
+            console.log(`   Difficulty: ${difficulty || 'medium'}`);
             console.log(`   Job Description length: ${jobDescription?.length || 0} chars`);
 
             if (!jobDescription) {
@@ -52,7 +54,9 @@ class InterviewController {
                 jobDescription,
                 jobPosition || 'junior',
                 interviewType || 'technical',
-                resumeText
+                resumeText,
+                timeLimit || '15',
+                difficulty || 'medium'
             );
 
             console.log('✅ Session initialized successfully');
