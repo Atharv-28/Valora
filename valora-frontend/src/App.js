@@ -7,6 +7,7 @@ import { Interview } from './pages/interview';
 import { Footer } from './components/footer';
 import { ContactUs } from './pages/ContactUs';
 import { Login } from './pages/login';
+import { Signup } from './pages/signup';
 
 function AppContent() {
   const location = useLocation();
@@ -22,7 +23,7 @@ function AppContent() {
         <Route path="/about" element={<div style={{padding: '2rem'}}>About Page - Coming Soon</div>} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<div style={{padding: '2rem'}}>Sign Up Page - Coming Soon</div>} />
+        <Route path="/signup" element={<Signup />} />
       </Routes>
       <Footer />
     </div>
