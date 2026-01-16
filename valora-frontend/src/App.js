@@ -23,8 +23,8 @@ function AppContent() {
         <Route path="/interview" element={<Interview />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<ContactUs />} />
-        <Route path="/login" element={<div style={{padding: '2rem'}}>Login Page - Coming Soon</div>} />
-        <Route path="/signup" element={<div style={{padding: '2rem'}}>Sign Up Page - Coming Soon</div>} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
       </Routes>
       <Footer />
     </div>
