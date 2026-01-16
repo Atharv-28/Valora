@@ -14,6 +14,7 @@ export const Interview = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const videoRef = useRef(null);
+    const canvasRef = useRef(null);
     const sessionIdRef = useRef(null); // Use ref to ensure latest value
     const [stream, setStream] = useState(null);
     const [videoEnabled, setVideoEnabled] = useState(true);
@@ -25,6 +26,10 @@ export const Interview = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [userTranscript, setUserTranscript] = useState('');
     const [showDisclaimer, setShowDisclaimer] = useState(false);
+    const [timeRemaining, setTimeRemaining] = useState(0);
+    const [totalTime, setTotalTime] = useState(0);
+    const timerRef = useRef(null);
+    const [showInterviewEndModal, setShowInterviewEndModal] = useState(false);
     
     const interviewData = location.state;
 
@@ -32,6 +37,13 @@ export const Interview = () => {
         if (!interviewData) {
             navigate('/start-interview');
             return;
+        }
+
+        // Initialize timer with the selected time limit
+        if (interviewData.timeLimit) {
+            const timeInSeconds = parseInt(interviewData.timeLimit) * 60;
+            setTimeRemaining(timeInSeconds);
+            setTotalTime(timeInSeconds);
         }
 
         // Initialize camera and microphone
@@ -51,6 +63,10 @@ export const Interview = () => {
             textToSpeech.cancel();
             // Exit fullscreen
             exitFullscreen();
+            // Clear timer
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
         };
     }, []);
 
@@ -124,6 +140,11 @@ export const Interview = () => {
     const handleEndInterview = async () => {
         if (window.confirm('Are you sure you want to end the interview?')) {
             try {
+                // Clear timer
+                if (timerRef.current) {
+                    clearInterval(timerRef.current);
+                }
+
                 // Stop speech services
                 speechToText.stop();
                 textToSpeech.cancel();
@@ -157,6 +178,9 @@ export const Interview = () => {
         setIsInterviewStarted(true);
         setIsProcessing(true);
 
+        // Start the countdown timer
+        startTimer();
+
         try {
             // Initialize interview session with backend
             const formData = new FormData();
@@ -164,6 +188,8 @@ export const Interview = () => {
             formData.append('jobDescription', interviewData.jobDescription);
             formData.append('jobPosition', interviewData.jobPosition);
             formData.append('interviewType', interviewData.interviewType);
+            formData.append('timeLimit', interviewData.timeLimit || '15');
+            formData.append('difficulty', interviewData.difficulty || 'medium');
 
             const response = await interviewApi.initializeInterview(formData);
             console.log('✅ Initialization response:', response);
@@ -193,6 +219,103 @@ export const Interview = () => {
         } finally {
             setIsProcessing(false);
         }
+    };
+
+    const startTimer = () => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
+
+        timerRef.current = setInterval(() => {
+            setTimeRemaining((prev) => {
+                if (prev <= 1) {
+                    // Time's up!
+                    clearInterval(timerRef.current);
+                    handleTimeUp();
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    const handleTimeUp = async () => {
+        // Stop speech services
+        speechToText.stop();
+        textToSpeech.cancel();
+
+        // End interview session
+        if (sessionIdRef.current) {
+            try {
+                await interviewApi.endInterview(sessionIdRef.current);
+            } catch (error) {
+                console.error('Error ending interview:', error);
+            }
+        }
+
+        // Stop media tracks
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        exitFullscreen();
+        setShowInterviewEndModal(true);
+    };
+
+    const handleViewReport = () => {
+        // TODO: Navigate to report page when implemented
+        setShowInterviewEndModal(false);
+        navigate('/');
+    };
+
+    const handleEndModalClose = () => {
+        setShowInterviewEndModal(false);
+        navigate('/');
+    };
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const captureSnapshot = () => {
+        if (!videoRef.current || !videoEnabled) {
+            return null;
+        }
+
+        try {
+            // Create a canvas element if not exists
+            if (!canvasRef.current) {
+                canvasRef.current = document.createElement('canvas');
+            }
+
+            const canvas = canvasRef.current;
+            const video = videoRef.current;
+
+            // Set canvas dimensions to match video
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+
+            // Draw current video frame to canvas
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert canvas to base64 image
+            const snapshot = canvas.toDataURL('image/jpeg', 0.8);
+            console.log('📸 Snapshot captured successfully');
+            return snapshot;
+        } catch (error) {
+            console.error('❌ Error capturing snapshot:', error);
+            return null;
+        }
+    };
+
+    const getTimerColor = () => {
+        const percentage = (timeRemaining / totalTime) * 100;
+        if (percentage > 50) return '#4CAF50';
+        if (percentage > 25) return '#FF9800';
+        return '#f44336';
     };
 
     const startListening = () => {
@@ -242,20 +365,28 @@ export const Interview = () => {
         
         setIsProcessing(true);
         
+        // Capture user snapshot
+        const userSnapshot = captureSnapshot();
+        console.log(`📸 User snapshot: ${userSnapshot ? 'captured' : 'not available'}`);
+        
         // Add user message to transcript
         setTranscript(prev => [...prev, { speaker: 'user', text: userMessage }]);
 
         try {
             console.log('📤 Sending to backend...');
+            console.log(`⏱️ Remaining time: ${timeRemaining} seconds`);
             console.log('⏳ Waiting for complete response from Gemini (no timeout)...');
             
-            // Send message to backend - wait for complete response
+            // Send message to backend with additional data - wait for complete response
             const response = await interviewApi.sendMessage(currentSessionId, userMessage, {
                 jobPosition: interviewData.jobPosition,
-                interviewType: interviewData.interviewType
+                interviewType: interviewData.interviewType,
+                timeRemaining: timeRemaining,
+                snapshot: userSnapshot
             });
             console.log('✅ Response received:', response);
             console.log(`📊 Response length: ${response.message?.length} characters`);
+            console.log(`⏰ Should end interview: ${response.shouldEndInterview || false}`);
 
             const botResponse = response.message;
             setBotMessage(botResponse);
@@ -267,6 +398,14 @@ export const Interview = () => {
             // Speak the response
             await textToSpeech.speak(botResponse);
             console.log('✅ AI finished speaking');
+            
+            // Check if interview should end
+            if (response.shouldEndInterview) {
+                console.log('⏰ Interview ending due to time constraint...');
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds after outro
+                handleTimeUp();
+                return;
+            }
             
             // Wait an additional 1 second after speech ends before restarting recognition
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -292,11 +431,19 @@ export const Interview = () => {
             <div className="interview-header">
                 <div className="interview-info">
                     <h2>Valora Interview Session</h2>
-                    <span className="interview-type">{interviewData?.interviewType} • {interviewData?.jobPosition}</span>
+                    <span className="interview-type">{interviewData?.interviewType} • {interviewData?.jobPosition} • {interviewData?.difficulty}</span>
                 </div>
-                <div className="interview-status">
-                    <span className="status-indicator"></span>
-                    <span>Live</span>
+                <div className="interview-status-container">
+                    {isInterviewStarted && (
+                        <div className="timer-display" style={{ color: getTimerColor() }}>
+                            <span className="timer-icon">⏱️</span>
+                            <span className="timer-text">{formatTime(timeRemaining)}</span>
+                        </div>
+                    )}
+                    <div className="interview-status">
+                        <span className="status-indicator"></span>
+                        <span>Live</span>
+                    </div>
                 </div>
             </div>
 
@@ -346,23 +493,26 @@ export const Interview = () => {
             </div>
 
             {/* Transcript Section */}
-            {transcript.length > 0 && (
-                <div className="transcript-section">
+            <div className="transcript-section">
                 {userTranscript && (
                     <div className="user-speaking-indicator">
                         <span className="speaking-text">You're saying: {userTranscript}</span>
                     </div>
                 )}
-                    <h4>Conversation</h4>
-                    <div className="transcript-list">
-                        {transcript.map((item, index) => (
+                <div className="transcript-list">
+                    {transcript.length === 0 ? (
+                        <div style={{ color: '#aaa', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>
+                            Conversation will appear here once the interview starts...
+                        </div>
+                    ) : (
+                        transcript.map((item, index) => (
                             <div key={index} className={`transcript-item ${item.speaker}`}>
                                 <strong>{item.speaker === 'bot' ? 'AI' : 'You'}:</strong> {item.text}
                             </div>
-                        ))}
-                    </div>
+                        ))
+                    )}
                 </div>
-            )}
+            </div>
 
             {/* Control Panel */}
             <div className="control-panel">
@@ -394,7 +544,7 @@ export const Interview = () => {
 
                 {!isInterviewStarted && (
                     <button className="start-speaking-btn" onClick={handleStartInterview}>
-                        🎙️ Start Speaking
+                        🎙️ Start Interview
                     </button>
                 )}
             </div>
@@ -407,7 +557,7 @@ export const Interview = () => {
                         <div className="disclaimer-content">
                             <div className="disclaimer-item">
                                 <span className="disclaimer-icon">⏰</span>
-                                <p><strong>Continuous Interview:</strong> The interview will continue indefinitely until you manually end it using the "End Call" button. There is no automatic timeout mechanism.</p>
+                                <p><strong>Time Limit:</strong> Your interview will automatically end after {interviewData?.timeLimit} minutes. A timer will be displayed during the interview to help you track the remaining time.</p>
                             </div>
                             <div className="disclaimer-item">
                                 <span className="disclaimer-icon">📊</span>
@@ -417,6 +567,10 @@ export const Interview = () => {
                                 <span className="disclaimer-icon">🎤</span>
                                 <p><strong>Microphone Required:</strong> Please ensure your microphone is enabled and working for the voice-based interview.</p>
                             </div>
+                            <div className="disclaimer-item">
+                                <span className="disclaimer-icon">🎯</span>
+                                <p><strong>Difficulty Level:</strong> Your interview is set to {interviewData?.difficulty} difficulty. Questions will be tailored to this level.</p>
+                            </div>
                         </div>
                         <div className="disclaimer-actions">
                             <button className="disclaimer-cancel" onClick={() => navigate(-1)}>
@@ -424,6 +578,26 @@ export const Interview = () => {
                             </button>
                             <button className="disclaimer-accept" onClick={() => setShowDisclaimer(false)}>
                                 I Understand, Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Interview End Modal */}
+            {showInterviewEndModal && (
+                <div className="interview-end-overlay">
+                    <div className="interview-end-modal">
+                        <div className="end-modal-icon">🎉</div>
+                        <h2>Interview Complete</h2>
+                        <p>Thank you for participating in the Valora AI interview!</p>
+                        <p className="end-modal-subtitle">Your responses have been recorded and analyzed.</p>
+                        <div className="end-modal-actions">
+                            <button className="view-report-btn" onClick={handleViewReport}>
+                                📊 View Report
+                            </button>
+                            <button className="close-end-btn" onClick={handleEndModalClose}>
+                                Close
                             </button>
                         </div>
                     </div>

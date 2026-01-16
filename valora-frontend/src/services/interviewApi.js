@@ -23,16 +23,27 @@ class InterviewApiService {
 
     async sendMessage(sessionId, message, context) {
         try {
+            const payload = {
+                sessionId,
+                message,
+                context: {
+                    jobPosition: context.jobPosition,
+                    interviewType: context.interviewType,
+                    timeRemaining: context.timeRemaining
+                }
+            };
+
+            // Add snapshot if available
+            if (context.snapshot) {
+                payload.snapshot = context.snapshot;
+            }
+
             const response = await fetch(`${API_BASE_URL}/api/interview/message`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    sessionId,
-                    message,
-                    context
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
