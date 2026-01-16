@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import Logo from '../assets/Valora-transparent-logo-horizontal.png'
 import './navbar.css'
 
 export const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const { currentUser, logout } = useAuth()
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen)
@@ -12,6 +14,15 @@ export const Navbar = () => {
 
     const closeMenu = () => {
         setIsMenuOpen(false)
+    }
+
+    const handleLogout = async () => {
+        try {
+            await logout()
+            closeMenu()
+        } catch (error) {
+            console.error('Logout error:', error)
+        }
     }
 
     return (
@@ -41,12 +52,25 @@ export const Navbar = () => {
                     <Link to="/contact" className="nav-link" onClick={closeMenu}>
                         Contact
                     </Link>
-                    <Link to="/login" className="nav-link nav-link-primary" onClick={closeMenu}>
-                        Log in
-                    </Link>
-                    <Link to="/signup" className="nav-link nav-link-secondary" onClick={closeMenu}>
-                        Sign up
-                    </Link>
+                    {currentUser ? (
+                        <>
+                            <Link to="/dashboard" className="nav-link" onClick={closeMenu}>
+                                Dashboard
+                            </Link>
+                            <button className="nav-link nav-logout" onClick={handleLogout}>
+                                Logout
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link to="/login" className="nav-link nav-link-primary" onClick={closeMenu}>
+                                Log in
+                            </Link>
+                            <Link to="/signup" className="nav-link nav-link-secondary" onClick={closeMenu}>
+                                Sign up
+                            </Link>
+                        </>
+                    )}
                 </div>
             </div>
         </nav>

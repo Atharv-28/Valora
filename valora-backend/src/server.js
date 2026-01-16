@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 const interviewRoutes = require('./routes/interviewRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,6 +23,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/interview', interviewRoutes);
+app.use('/api/user', userRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

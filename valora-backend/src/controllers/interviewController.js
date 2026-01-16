@@ -1,6 +1,7 @@
 const geminiService = require('../services/geminiService');
 const resumeService = require('../services/resumeService');
 const reportService = require('../services/reportService');
+const firestoreService = require('../services/firestoreService');
 const { v4: uuidv4 } = require('uuid');
 
 class InterviewController {
@@ -241,6 +242,29 @@ class InterviewController {
             }
             console.log(`   Overall Score: ${report.overallScore}/10`);
             console.log('📤 Sending report to frontend...');
+
+            // Save to Firestore if user is authenticated
+            if (req.user && req.user.uid) {
+                try {
+                    console.log(`💾 Saving interview to Firestore for user: ${req.user.uid}`);
+                    await firestoreService.saveInterview(req.user.uid, {
+                        sessionId: sessionId,
+                        jobPosition: sessionData.jobPosition || 'Not specified',
+                        interviewType: sessionData.interviewType || 'technical',
+                        difficulty: sessionData.difficulty || 'medium',
+                        timeLimit: sessionData.timeLimit || '15',
+                        report: report,
+                        transcript: sessionData.transcript,
+                        duration: sessionData.duration
+                    });
+                    console.log('✅ Interview saved to Firestore');
+                } catch (firestoreError) {
+                    console.error('⚠️ Warning: Failed to save to Firestore:', firestoreError.message);
+                    // Continue even if Firestore save fails
+                }
+            } else {
+                console.log('ℹ️ Guest user - interview not saved to Firestore');
+            }
 
             res.status(200).json({
                 success: true,

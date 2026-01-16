@@ -1,84 +1,98 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
-import './login.css'
+import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
+import './login.css';
 
 export const Login = () => {
-	const [form, setForm] = useState({ email: '', password: '' })
-	const [error, setError] = useState('')
-	const [status, setStatus] = useState('idle') // idle | submitting
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-	const onChange = (e) => {
-		const { name, value } = e.target
-		setForm((prev) => ({ ...prev, [name]: value }))
-		setError('')
-	}
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setError('');
+      setLoading(true);
+      await login(email, password);
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Failed to log in: ' + err.message);
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	const onSubmit = (e) => {
-		e.preventDefault()
-		setError('')
-		setStatus('submitting')
+  const handleGuestMode = () => {
+    navigate('/start-interview');
+  };
 
-		// Auth is not wired yet (no backend endpoint). Keep UX minimal.
-		setTimeout(() => {
-			setStatus('idle')
-			setError('Login is not configured yet. Please try again later.')
-		}, 400)
-	}
+  return (
+    <main className="login-page">
+      <div className="login-container">
+        <header className="login-header">
+          <h1 className="login-title">Log in</h1>
+          <p className="login-subtitle">Welcome back to Valora.</p>
+        </header>
 
-	return (
-		<main className="login-page">
-			<div className="login-container">
-				<header className="login-header">
-					<h1 className="login-title">Log in</h1>
-					<p className="login-subtitle">Welcome back to Valora.</p>
-				</header>
+        <section className="login-card" aria-label="Login form">
+          <form className="login-form" onSubmit={handleSubmit}>
+            <div className="login-field">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+              />
+            </div>
 
-				<section className="login-card" aria-label="Login form">
-					<form className="login-form" onSubmit={onSubmit}>
-						<div className="login-field">
-							<label htmlFor="email">Email</label>
-							<input
-								id="email"
-								name="email"
-								type="email"
-								autoComplete="email"
-								value={form.email}
-								onChange={onChange}
-								placeholder="you@example.com"
-								required
-							/>
-						</div>
+            <div className="login-field">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
 
-						<div className="login-field">
-							<label htmlFor="password">Password</label>
-							<input
-								id="password"
-								name="password"
-								type="password"
-								autoComplete="current-password"
-								value={form.password}
-								onChange={onChange}
-								placeholder="••••••••"
-								required
-							/>
-						</div>
+            {error && (
+              <p className="login-error" role="alert">
+                {error}
+              </p>
+            )}
 
-						{error && (
-							<p className="login-error" role="alert">
-								{error}
-							</p>
-						)}
+            <button className="login-submit" type="submit" disabled={loading}>
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
 
-						<button className="login-submit" type="submit" disabled={status === 'submitting'}>
-							{status === 'submitting' ? 'Signing in…' : 'Sign in'}
-						</button>
+            <div className="auth-divider">
+              <span>OR</span>
+            </div>
 
-						<p className="login-footer">
-							Don’t have an account? <Link to="/signup">Sign up</Link>
-						</p>
-					</form>
-				</section>
-			</div>
-		</main>
-	)
-}
+            <button type="button" onClick={handleGuestMode} className="guest-button">
+              Continue as Guest
+            </button>
+
+            <p className="login-footer">
+              Don't have an account? <Link to="/signup">Sign up</Link>
+            </p>
+          </form>
+        </section>
+      </div>
+    </main>
+  );
+};
