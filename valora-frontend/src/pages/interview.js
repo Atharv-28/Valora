@@ -14,6 +14,7 @@ export const Interview = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const videoRef = useRef(null);
+    const canvasRef = useRef(null);
     const sessionIdRef = useRef(null); // Use ref to ensure latest value
     const [stream, setStream] = useState(null);
     const [videoEnabled, setVideoEnabled] = useState(true);
@@ -28,6 +29,7 @@ export const Interview = () => {
     const [timeRemaining, setTimeRemaining] = useState(0);
     const [totalTime, setTotalTime] = useState(0);
     const timerRef = useRef(null);
+    const [showInterviewEndModal, setShowInterviewEndModal] = useState(false);
     
     const interviewData = location.state;
 
@@ -256,8 +258,18 @@ export const Interview = () => {
             stream.getTracks().forEach(track => track.stop());
         }
 
-        alert('Time is up! Your interview has ended.');
         exitFullscreen();
+        setShowInterviewEndModal(true);
+    };
+
+    const handleViewReport = () => {
+        // TODO: Navigate to report page when implemented
+        setShowInterviewEndModal(false);
+        navigate('/');
+    };
+
+    const handleEndModalClose = () => {
+        setShowInterviewEndModal(false);
         navigate('/');
     };
 
@@ -265,6 +277,38 @@ export const Interview = () => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const captureSnapshot = () => {
+        if (!videoRef.current || !videoEnabled) {
+            return null;
+        }
+
+        try {
+            // Create a canvas element if not exists
+            if (!canvasRef.current) {
+                canvasRef.current = document.createElement('canvas');
+            }
+
+            const canvas = canvasRef.current;
+            const video = videoRef.current;
+
+            // Set canvas dimensions to match video
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+
+            // Draw current video frame to canvas
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert canvas to base64 image
+            const snapshot = canvas.toDataURL('image/jpeg', 0.8);
+            console.log('📸 Snapshot captured successfully');
+            return snapshot;
+        } catch (error) {
+            console.error('❌ Error capturing snapshot:', error);
+            return null;
+        }
     };
 
     const getTimerColor = () => {
@@ -321,20 +365,28 @@ export const Interview = () => {
         
         setIsProcessing(true);
         
+        // Capture user snapshot
+        const userSnapshot = captureSnapshot();
+        console.log(`📸 User snapshot: ${userSnapshot ? 'captured' : 'not available'}`);
+        
         // Add user message to transcript
         setTranscript(prev => [...prev, { speaker: 'user', text: userMessage }]);
 
         try {
             console.log('📤 Sending to backend...');
+            console.log(`⏱️ Remaining time: ${timeRemaining} seconds`);
             console.log('⏳ Waiting for complete response from Gemini (no timeout)...');
             
-            // Send message to backend - wait for complete response
+            // Send message to backend with additional data - wait for complete response
             const response = await interviewApi.sendMessage(currentSessionId, userMessage, {
                 jobPosition: interviewData.jobPosition,
-                interviewType: interviewData.interviewType
+                interviewType: interviewData.interviewType,
+                timeRemaining: timeRemaining,
+                snapshot: userSnapshot
             });
             console.log('✅ Response received:', response);
             console.log(`📊 Response length: ${response.message?.length} characters`);
+            console.log(`⏰ Should end interview: ${response.shouldEndInterview || false}`);
 
             const botResponse = response.message;
             setBotMessage(botResponse);
@@ -346,6 +398,14 @@ export const Interview = () => {
             // Speak the response
             await textToSpeech.speak(botResponse);
             console.log('✅ AI finished speaking');
+            
+            // Check if interview should end
+            if (response.shouldEndInterview) {
+                console.log('⏰ Interview ending due to time constraint...');
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds after outro
+                handleTimeUp();
+                return;
+            }
             
             // Wait an additional 1 second after speech ends before restarting recognition
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -518,6 +578,26 @@ export const Interview = () => {
                             </button>
                             <button className="disclaimer-accept" onClick={() => setShowDisclaimer(false)}>
                                 I Understand, Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Interview End Modal */}
+            {showInterviewEndModal && (
+                <div className="interview-end-overlay">
+                    <div className="interview-end-modal">
+                        <div className="end-modal-icon">🎉</div>
+                        <h2>Interview Complete</h2>
+                        <p>Thank you for participating in the Valora AI interview!</p>
+                        <p className="end-modal-subtitle">Your responses have been recorded and analyzed.</p>
+                        <div className="end-modal-actions">
+                            <button className="view-report-btn" onClick={handleViewReport}>
+                                📊 View Report
+                            </button>
+                            <button className="close-end-btn" onClick={handleEndModalClose}>
+                                Close
                             </button>
                         </div>
                     </div>

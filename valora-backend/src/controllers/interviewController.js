@@ -87,12 +87,14 @@ class InterviewController {
     async sendMessage(req, res) {
         try {
             console.log('\n💬 ========== MESSAGE EXCHANGE ==========');
-            const { sessionId, message, context } = req.body;
+            const { sessionId, message, context, snapshot } = req.body;
 
             console.log(`📥 Received from frontend:`);
             console.log(`   Session ID: ${sessionId}`);
             console.log(`   User Message: "${message?.substring(0, 100)}${message?.length > 100 ? '...' : ''}"`);
             console.log(`   Context: Position=${context?.jobPosition}, Type=${context?.interviewType}`);
+            console.log(`   Time Remaining: ${context?.timeRemaining} seconds`);
+            console.log(`   Snapshot: ${snapshot ? 'Included' : 'Not included'}`);
 
             if (!sessionId || !message) {
                 console.log('❌ Missing session ID or message');
@@ -108,16 +110,23 @@ class InterviewController {
             console.log('🤖 Forwarding message to Gemini...');
             console.log('⏳ Waiting for complete response (no timeout)...');
             
-            // Send message to Gemini and get response - let it take all the time it needs
-            const response = await geminiService.sendMessage(sessionId, message);
+            // Send message to Gemini with context and snapshot - let it take all the time it needs
+            const response = await geminiService.sendMessage(
+                sessionId, 
+                message, 
+                context?.timeRemaining,
+                snapshot
+            );
 
             console.log('✅ Response received from Gemini');
-            console.log(`📊 Response length: ${response.length} characters`);
+            console.log(`📊 Response length: ${response.message?.length || response.length} characters`);
+            console.log(`⏰ Should end interview: ${response.shouldEndInterview || false}`);
             console.log('📤 Sending response to frontend...');
 
             res.status(200).json({
                 success: true,
-                message: response
+                message: response.message || response,
+                shouldEndInterview: response.shouldEndInterview || false
             });
 
             console.log('✅ ========== MESSAGE EXCHANGE COMPLETE ==========\n');

@@ -128,10 +128,12 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
         }
     }
 
-    async sendMessage(sessionId, message) {
+    async sendMessage(sessionId, message, timeRemaining = null, snapshot = null) {
         try {
             console.log(`\n💬 User message received for session: ${sessionId}`);
             console.log(`   Message: "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"`);
+            console.log(`   Time Remaining: ${timeRemaining !== null ? `${timeRemaining} seconds` : 'Not provided'}`);
+            console.log(`   Snapshot: ${snapshot ? 'Provided for analysis' : 'Not provided'}`);
             
             const session = this.activeSessions.get(sessionId);
             
@@ -140,8 +142,60 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
                 throw new Error('Session not found');
             }
 
+            // Build enhanced message with context
+            let enhancedMessage = message;
+            
+            // Add time remaining context
+            if (timeRemaining !== null) {
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                enhancedMessage += `\n\n[INTERVIEWER NOTE: Time remaining in interview: ${minutes}m ${seconds}s`;
+                
+                // If less than 1 minute remaining, instruct AI to wrap up
+                if (timeRemaining < 60) {
+                    enhancedMessage += `. CRITICAL: Less than 1 minute remaining! You MUST conclude the interview now. Provide a brief, warm closing statement thanking the candidate and wishing them well. Do NOT ask any more questions. Keep it under 2 sentences.]`;
+                } else {
+                    enhancedMessage += `]`;
+                }
+                
+                // If less than 1 minute remaining, instruct AI to wrap up
+                if (timeRemaining < 60) {
+                    enhancedMessage += `. CRITICAL: Less than 1 minute remaining! You MUST conclude the interview now. Provide a brief, warm closing statement thanking the candidate and wishing them well. Do NOT ask any more questions. Keep it under 2 sentences.]`;
+                } else {
+                    enhancedMessage += `]`;
+                }
+            }
+
+            // Prepare message parts
+            const messageParts = [{ text: enhancedMessage }];
+
+            // Add snapshot for visual analysis if provided
+            if (snapshot) {
+                try {
+                    // Remove data URL prefix if present
+                    const base64Data = snapshot.replace(/^data:image\/\w+;base64,/, '');
+                    
+                    messageParts.push({
+                        inlineData: {
+                            mimeType: 'image/jpeg',
+                            data: base64Data
+                        }
+                    });
+                    
+                    // Add instruction for AI to analyze the image
+                    messageParts.push({
+                        text: '\n\n[INTERVIEWER NOTE: Analyze the candidate\'s visual cues from the provided image. Consider their body language, facial expressions, confidence level, nervousness indicators, eye contact, and overall presentation. Subtly adjust your questioning or provide encouragement if needed based on their demeanor.]'
+                    });
+                    
+                    console.log('   📸 Snapshot added to message for visual analysis');
+                } catch (snapshotError) {
+                    console.error('   ⚠️ Error processing snapshot:', snapshotError.message);
+                    // Continue without snapshot if there's an error
+                }
+            }
+
             console.log(`   📤 Sending to Gemini...`);
-            const result = await session.chat.sendMessage(message);
+            const result = await session.chat.sendMessage(messageParts);
             const response = result.response.text();
             
             session.messageCount++;
@@ -149,7 +203,14 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
             console.log(`   ✅ Got response from Gemini: "${response.substring(0, 100)}${response.length > 100 ? '...' : ''}"`);
             console.log(`   Message count: ${session.messageCount}`);
             
-            return response;
+            // Check if interview should end (less than 1 minute remaining)
+            const shouldEndInterview = timeRemaining !== null && timeRemaining < 60;
+            
+            return {
+                message: response,
+                shouldEndInterview,
+                timeRemaining
+            };
         } catch (error) {
             console.error(`❌ Error sending message:`, error.message);
             console.error('   Full error:', error);
