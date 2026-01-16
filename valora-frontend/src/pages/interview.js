@@ -29,6 +29,7 @@ export const Interview = () => {
     const [timeRemaining, setTimeRemaining] = useState(0);
     const [totalTime, setTotalTime] = useState(0);
     const timerRef = useRef(null);
+    const timeRemainingRef = useRef(0); // Track current time remaining to avoid stale closures
     const [showInterviewEndModal, setShowInterviewEndModal] = useState(false);
     const [reportData, setReportData] = useState(null);
     const [isLoadingReport, setIsLoadingReport] = useState(false);
@@ -46,6 +47,7 @@ export const Interview = () => {
             const timeInSeconds = parseInt(interviewData.timeLimit) * 60;
             setTimeRemaining(timeInSeconds);
             setTotalTime(timeInSeconds);
+            timeRemainingRef.current = timeInSeconds; // Initialize ref
         }
 
         // Initialize camera and microphone
@@ -230,13 +232,16 @@ export const Interview = () => {
 
         timerRef.current = setInterval(() => {
             setTimeRemaining((prev) => {
+                const newTime = prev <= 1 ? 0 : prev - 1;
+                timeRemainingRef.current = newTime; // Update ref with latest value
+                
                 if (prev <= 1) {
                     // Time's up!
                     clearInterval(timerRef.current);
                     handleTimeUp();
                     return 0;
                 }
-                return prev - 1;
+                return newTime;
             });
         }, 1000);
     };
@@ -396,14 +401,14 @@ export const Interview = () => {
 
         try {
             console.log('📤 Sending to backend...');
-            console.log(`⏱️ Remaining time: ${timeRemaining} seconds`);
+            console.log(`⏱️ Remaining time: ${timeRemainingRef.current} seconds`);
             console.log('⏳ Waiting for complete response from Gemini (no timeout)...');
             
             // Send message to backend with additional data - wait for complete response
             const response = await interviewApi.sendMessage(currentSessionId, userMessage, {
                 jobPosition: interviewData.jobPosition,
                 interviewType: interviewData.interviewType,
-                timeRemaining: timeRemaining,
+                timeRemaining: timeRemainingRef.current, // Use ref for latest value
                 snapshot: userSnapshot
             });
             console.log('✅ Response received:', response);
