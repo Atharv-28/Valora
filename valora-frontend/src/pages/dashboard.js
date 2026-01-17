@@ -89,13 +89,13 @@ const Dashboard = () => {
   const typeData = analytics?.scoresByType ? 
     Object.entries(analytics.scoresByType).map(([name, value]) => ({
       name: name.charAt(0).toUpperCase() + name.slice(1),
-      value: parseFloat(value.toFixed(1))
+      value: parseFloat(Number(value).toFixed(1))
     })) : [];
 
   const difficultyData = analytics?.scoresByDifficulty ?
     Object.entries(analytics.scoresByDifficulty).map(([name, value]) => ({
       name: name.charAt(0).toUpperCase() + name.slice(1),
-      value: parseFloat(value.toFixed(1))
+      value: parseFloat(Number(value).toFixed(1))
     })) : [];
 
   const trendData = analytics?.recentTrend || [];
@@ -144,7 +144,7 @@ const Dashboard = () => {
             <div className="stat-icon">⭐</div>
             <div className="stat-content">
               <h3>Average Score</h3>
-              <p className="stat-value">{analytics.averageScore?.toFixed(1)}/10</p>
+              <p className="stat-value">{Number(analytics.averageScore || 0).toFixed(1)}/10</p>
             </div>
           </div>
           <div className="stat-card">

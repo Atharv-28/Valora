@@ -1,12 +1,33 @@
 // API Service for Interview Backend
+import { auth } from '../config/firebase';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 class InterviewApiService {
+    // Helper method to get auth headers
+    async getAuthHeaders() {
+        const headers = {};
+        
+        try {
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+                const token = await currentUser.getIdToken();
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+        } catch (error) {
+            console.warn('Could not get auth token:', error);
+        }
+        
+        return headers;
+    }
+
     async initializeInterview(formData) {
         try {
+            const authHeaders = await this.getAuthHeaders();
+            
             const response = await fetch(`${API_BASE_URL}/api/interview/init`, {
                 method: 'POST',
+                headers: authHeaders,
                 body: formData // FormData with resume and other details
             });
 
@@ -38,10 +59,13 @@ class InterviewApiService {
                 payload.snapshot = context.snapshot;
             }
 
+            const authHeaders = await this.getAuthHeaders();
+            
             const response = await fetch(`${API_BASE_URL}/api/interview/message`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    ...authHeaders
                 },
                 body: JSON.stringify(payload)
             });
@@ -59,10 +83,13 @@ class InterviewApiService {
 
     async endInterview(sessionId) {
         try {
+            const authHeaders = await this.getAuthHeaders();
+            
             const response = await fetch(`${API_BASE_URL}/api/interview/end`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    ...authHeaders
                 },
                 body: JSON.stringify({ sessionId })
             });
@@ -80,8 +107,11 @@ class InterviewApiService {
 
     async getReport(sessionId) {
         try {
+            const authHeaders = await this.getAuthHeaders();
+            
             const response = await fetch(`${API_BASE_URL}/api/interview/report/${sessionId}`, {
-                method: 'GET'
+                method: 'GET',
+                headers: authHeaders
             });
 
             if (!response.ok) {
