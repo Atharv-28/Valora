@@ -78,6 +78,10 @@ export const Interview = () => {
         // Show disclaimer when component mounts
         if (interviewData) {
             setShowDisclaimer(true);
+            // Test backend connectivity
+            interviewApi.testConnection().catch(err => {
+                console.error('Backend connectivity test failed:', err);
+            });
         }
     }, [interviewData]);
 
@@ -218,8 +222,22 @@ export const Interview = () => {
             startListening();
         } catch (error) {
             console.error('Error starting interview:', error);
-            setBotMessage("Sorry, there was an error starting the interview. Please try again.");
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                response: error.response
+            });
+            
+            let errorMessage = "Sorry, there was an error starting the interview. Please try again.";
+            
+            // Try to get more specific error message
+            if (error.message) {
+                errorMessage = `Error: ${error.message}. Please check console for details.`;
+            }
+            
+            setBotMessage(errorMessage);
             await textToSpeech.speak("Sorry, there was an error starting the interview. Please try again.");
+            setIsInterviewStarted(false);
         } finally {
             setIsProcessing(false);
         }
