@@ -4,6 +4,8 @@
 /valora-backend/node_modules
 /valora-backend/.env
 /valora-frontend/node_modules
+/valora-frontend/.env
+
 
 /.pnp
 .pnp.js

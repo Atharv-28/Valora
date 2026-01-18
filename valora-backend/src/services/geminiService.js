@@ -13,45 +13,55 @@ class GeminiService {
         console.log('✅ Gemini Service initialized with model: gemini-2.5-flash');
     }
 
-    createInterviewPrompt(jobDescription, jobPosition, interviewType, resumeText) {
-        const basePrompt = `You are Valora, an AI interviewer conducting a ${interviewType} interview for a ${jobPosition} position.
+    createInterviewPrompt(jobDescription, jobPosition, interviewType, resumeText, timeLimit, difficulty) {
+        // Concise interview focus
+        const focusMap = {
+            'technical': 'Technical skills, problem-solving, coding, system design.',
+            'hr': 'Behavioral, teamwork, communication, career goals.',
+            'hybrid': 'Balance technical AND behavioral questions.'
+        };
 
-Job Description:
-${jobDescription}
+        // Concise difficulty guidance
+        const difficultyMap = {
+            'easy': 'Ask straightforward, fundamental questions.',
+            'medium': 'Ask moderately challenging practical questions.',
+            'hard': 'Ask advanced questions requiring deep analysis.'
+        };
 
-Candidate's Resume:
-${resumeText || 'Resume information will be analyzed separately'}
+        const basePrompt = `You are Valora, AI interviewer for ${jobPosition} (${interviewType}, ${timeLimit}min, ${difficulty}).
 
-Your role:
-- Ask relevant interview questions based on the job description and position level
-- For technical interviews: Focus on technical skills, problem-solving, coding concepts, and system design
-- For HR interviews: Focus on behavioral questions, team fit, communication skills, and career goals
-- Be conversational and professional
-- Ask follow-up questions based on candidate responses
+Job: ${jobDescription}
 
-CRITICAL RULES:
-1. EVERY response MUST end with a clear, direct question
-2. Keep responses concise (2-3 sentences maximum, including the question)
-3. Never repeat questions already asked
-4. Format: [Brief acknowledgment/comment] + [Clear Question]
-5. Example: "That's great experience with React. How would you handle state management in a large-scale application?"
+Resume: ${resumeText || 'Will analyze separately'}
 
-Remember: ALWAYS end your response with a question mark (?). Your response is incomplete without a question.`;
+Role: ${focusMap[interviewType] || focusMap['technical']} ${difficultyMap[difficulty] || difficultyMap['medium']}
+
+RULES:
+1. End EVERY response with a question (?)
+2. Max 2-3 sentences per response
+3. No repeated questions
+4. Format: [Brief comment] + [Question]
+
+Example: "Good React experience. How would you handle state in large apps?"`;
 
         return basePrompt;
     }
 
-    async initializeSession(sessionId, jobDescription, jobPosition, interviewType, resumeText = '') {
+    async initializeSession(sessionId, jobDescription, jobPosition, interviewType, resumeText = '', timeLimit = '15', difficulty = 'medium') {
         try {
             console.log(`\n📝 Initializing session: ${sessionId}`);
             console.log(`   Position: ${jobPosition}`);
             console.log(`   Type: ${interviewType}`);
+            console.log(`   Time Limit: ${timeLimit} minutes`);
+            console.log(`   Difficulty: ${difficulty}`);
             
             const systemPrompt = this.createInterviewPrompt(
                 jobDescription,
                 jobPosition,
                 interviewType,
-                resumeText
+                resumeText,
+                timeLimit,
+                difficulty
             );
 
             console.log(`   System prompt length: ${systemPrompt.length} characters`);
@@ -64,22 +74,29 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
                     },
                     {
                         role: 'model',
-                        parts: [{ text: 'Understood. I am ready to conduct the interview. Every response will end with a clear question.' }]
+                        parts: [{ text: 'Ready to interview. Will end every response with a question.' }]
                     }
                 ],
                 generationConfig: {
-                    maxOutputTokens: 500,
+                    maxOutputTokens: 250, // Reduced from 500
                     temperature: 0.7,
                 }
             });
 
             this.activeSessions.set(sessionId, {
-                chat,
+                chat, // The chat object maintains FULL conversation history automatically via Gemini SDK
                 jobDescription,
                 jobPosition,
                 interviewType,
+                timeLimit,
+                difficulty,
                 startTime: new Date(),
-                messageCount: 0
+                messageCount: 0,
+                transcript: [] // Store full conversation for report generation
+                // IMPORTANT: The Gemini SDK's chat.sendMessage() automatically includes ALL previous
+                // messages in each request. The AI maintains full context throughout the interview.
+                // Token optimization is achieved through: compressed prompts, reduced maxOutputTokens,
+                // and embedded report generation to avoid re-sending transcript separately.
             });
 
             console.log(`   📤 Sending initial message to Gemini...`);
@@ -96,10 +113,11 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
         }
     }
 
-    async sendMessage(sessionId, message) {
+    async sendMessage(sessionId, message, timeRemaining = null) {
         try {
             console.log(`\n💬 User message received for session: ${sessionId}`);
             console.log(`   Message: "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"`);
+            console.log(`   Time Remaining: ${timeRemaining !== null ? `${timeRemaining} seconds` : 'Not provided'}`);
             
             const session = this.activeSessions.get(sessionId);
             
@@ -108,16 +126,78 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
                 throw new Error('Session not found');
             }
 
+            // Build enhanced message with context
+            let enhancedMessage = message;
+            
+            // Add time remaining context
+            if (timeRemaining !== null) {
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                enhancedMessage += `\n\n[INTERVIEWER NOTE: Time remaining: ${minutes}m ${seconds}s`;
+                
+                // If less than 60 seconds remaining, instruct AI to wrap up and generate report
+                if (timeRemaining < 60) {
+                    enhancedMessage += `. CRITICAL: <60s left! End interview after this. Give brief closing (1-2 sentences).\n\nThen add "\n\n---REPORT---\n" followed by JSON report:{"overallScore":<0-10>,"scoringBreakdown":{"technicalAccuracy":<0-10>,"communicationClarity":<0-10>,"confidenceIndex":<0-10>},"questionAnalysis":[{"question":"<q>","answer":"<a>","feedback":"<feedback>"}],"topMistakes":["<m1>","<m2>","<m3>","<m4>","<m5>"],"strengths":["<s1>","<s2>","<s3>","<s4>","<s5>"],"summary":"<2-3 sentences>"}.Reference actual answers.]`;
+                } else {
+                    enhancedMessage += `]`;
+                }
+            }
+
             console.log(`   📤 Sending to Gemini...`);
-            const result = await session.chat.sendMessage(message);
+            const result = await session.chat.sendMessage(enhancedMessage);
             const response = result.response.text();
             
             session.messageCount++;
 
+            // Store in transcript
+            session.transcript.push(
+                { speaker: 'user', text: message },
+                { speaker: 'bot', text: response }
+            );
+
             console.log(`   ✅ Got response from Gemini: "${response.substring(0, 100)}${response.length > 100 ? '...' : ''}"`);
             console.log(`   Message count: ${session.messageCount}`);
             
-            return response;
+            // Check if interview should end (less than 60 seconds remaining - matches the outro threshold)
+            const shouldEndInterview = timeRemaining !== null && timeRemaining < 60;
+            
+            // Extract report if present in the outro response
+            let extractedReport = null;
+            if (shouldEndInterview && response.includes('---REPORT---')) {
+                const reportStart = response.indexOf('---REPORT---');
+                let reportJson = response.substring(reportStart + 12).trim();
+
+                // Strip markdown fences if Gemini wraps JSON
+                if (reportJson.startsWith('```json')) {
+                    reportJson = reportJson.replace(/^```json\s*/g, '');
+                } else if (reportJson.startsWith('```')) {
+                    reportJson = reportJson.replace(/^```\s*/g, '');
+                }
+                if (reportJson.endsWith('```')) {
+                    reportJson = reportJson.replace(/```\s*$/g, '');
+                }
+
+                // Extract JSON block only
+                const start = reportJson.indexOf('{');
+                const end = reportJson.lastIndexOf('}');
+                if (start >= 0 && end > start) {
+                    reportJson = reportJson.substring(start, end + 1);
+                }
+
+                try {
+                    extractedReport = JSON.parse(reportJson);
+                    session.report = extractedReport;
+                    console.log('   📊 Report extracted and stored in session');
+                } catch (error) {
+                    console.error('   ⚠️ Failed to parse embedded report:', error.message);
+                }
+            }
+            
+            return {
+                message: response,
+                shouldEndInterview,
+                timeRemaining
+            };
         } catch (error) {
             console.error(`❌ Error sending message:`, error.message);
             console.error('   Full error:', error);
@@ -140,7 +220,15 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
                 interviewType: session.interviewType
             };
 
-            this.activeSessions.delete(sessionId);
+            // Mark session as ended but keep it for report generation
+            session.ended = true;
+            session.endTime = new Date();
+            
+            // Auto-cleanup after 1 hour to prevent memory leaks
+            setTimeout(() => {
+                this.activeSessions.delete(sessionId);
+                console.log(`🗑️ Session ${sessionId} auto-cleaned up after 1 hour`);
+            }, 3600000); // 1 hour
 
             return { success: true, sessionInfo };
         } catch (error) {
@@ -151,6 +239,26 @@ Remember: ALWAYS end your response with a question mark (?). Your response is in
 
     getActiveSessionCount() {
         return this.activeSessions.size;
+    }
+
+    getSessionData(sessionId) {
+        const session = this.activeSessions.get(sessionId);
+        if (!session) {
+            return null;
+        }
+
+        return {
+            sessionId,
+            jobDescription: session.jobDescription,
+            jobPosition: session.jobPosition,
+            interviewType: session.interviewType,
+            timeLimit: session.timeLimit,
+            difficulty: session.difficulty,
+            transcript: session.transcript,
+            messageCount: session.messageCount,
+            startTime: session.startTime,
+            report: session.report || null // Include pre-generated report if available
+        };
     }
 }
 
