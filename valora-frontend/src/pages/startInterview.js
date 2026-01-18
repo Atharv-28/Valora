@@ -10,7 +10,9 @@ export const StartInterview = () => {
         jobDescription: '',
         resume: null,
         jobPosition: 'junior',
-        interviewType: 'technical'
+        interviewType: 'technical',
+        timeLimit: '15',
+        difficulty: 'medium'
     });
 
     const handleInputChange = (e) => {
@@ -112,6 +114,42 @@ export const StartInterview = () => {
                             >
                                 <option value="technical">Technical</option>
                                 <option value="hr">HR</option>
+                                <option value="hybrid">Hybrid (Tech + HR)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Second Row: Time Limit & Difficulty */}
+                    <div className="form-row">
+                        <div className="form-group-inline">
+                            <label htmlFor="timeLimit">⏱️ Time Limit</label>
+                            <select
+                                id="timeLimit"
+                                name="timeLimit"
+                                value={formData.timeLimit}
+                                onChange={handleInputChange}
+                                required
+                            >
+                                <option value="5">5 Minutes</option>
+                                <option value="10">10 Minutes</option>
+                                <option value="15">15 Minutes</option>
+                                <option value="30">30 Minutes</option>
+                                <option value="45">45 Minutes</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group-inline">
+                            <label htmlFor="difficulty">📊 Difficulty Level</label>
+                            <select
+                                id="difficulty"
+                                name="difficulty"
+                                value={formData.difficulty}
+                                onChange={handleInputChange}
+                                required
+                            >
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
                             </select>
                         </div>
                     </div>

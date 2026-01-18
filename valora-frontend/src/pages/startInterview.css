@@ -95,7 +95,7 @@
     transition: all 0.3s ease;
     resize: none;
     flex: 1;
-    min-height: 180px;
+    min-height: 150px;
 }
 
 .form-group-full textarea:focus {
@@ -201,7 +201,7 @@
     }
 
     .form-group-full textarea {
-        min-height: 150px;
+        min-height: 115px;
     }
 }
 
@@ -232,7 +232,7 @@
     .form-group-full textarea {
         padding: 12px;
         font-size: 0.9rem;
-        min-height: 130px;
+        min-height: 105px;
     }
 
     .start-btn {
